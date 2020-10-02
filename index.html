@@ -1,0 +1,285 @@
+<!doctype html>
+<!--[if lt IE 7]>
+<html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>
+<html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>
+<html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!-->
+<html class="no-js"> <!--<![endif]-->
+<head>
+    <meta charset="utf-8">
+    <title>Ping</title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width">
+    <link rel="stylesheet" href="style/animate.css" />
+    <link rel="stylesheet" href="style/bootstrap.min.css">
+	<link rel="stylesheet" href="style/main.css">
+	<link rel="stylesheet" href="style/style.css">
+    <link rel="stylesheet" href="style/ng-modal.css">
+	<link rel="stylesheet" href="style/angular-material.min.css"> 
+	 
+		
+<style>
+.Loading {
+    display: inline-block;
+    vertical-align: middle;
+    background-position: center;
+    background:no-repeat;
+    background-image: url('data:image/gif;base64,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');
+    width:20px;
+    height:20px;
+    margin-top:6px;
+    margin-right:7px;
+}
+.AutocompleteDropDown {
+	background-color: #fcf8e3;
+	}
+</style>
+
+		
+</head>
+<body ng-app="explorermonitorapp">
+<!-- Show the directory currently used - remove it on a production server to not display the internal disk structure -->
+<!--  Page Directory: @_PAGEDIRECTORY_@ -->
+
+<div class="component col-xs-12"  ng-controller="ExplorerControler as ctrl">
+		
+	<div ng-if="ctrl.parameter.showbanner !=='Hide' ">
+		<center>
+		<table><tr><td><h1>Explorer</h1></td><td rowspan="2"><img src="img/icebreaker.jpg" width="150" heigth="150" /></td></tr>
+			<tr><td>
+				<center>
+					V1.0.0 (Sept 25, 2020)
+				</center>
+			</td></tr>
+			<tr><td>
+			
+			</td></tr>
+		</table>
+		</center>
+	</div>
+
+
+	<ul class="nav nav-tabs"  ng-class="{'nav-stacked': vertical, 'nav-justified': justified}" style="border-bottom: 1px solid #c2c2c2;">
+		<!-- <li ng-class="{active: active, disabled: false}" id="form-tab" heading="All" active="true" title="Tasks" 
+			select="ctrl.navbaractiv == 'Tasks'" class="{{ctrl.getNavClass('Tasks')}}" style="{{ctrl.getNavStyle('Tasks')}}">
+			  <a ng-click="ctrl.navbaractiv = 'Tasks';"   class="ng-binding">Tasks</a>
+		</li>
+		 -->
+		<li ng-class="{active: active, disabled: false}" id="form-tab" heading="All" active="true" title="Cases" 
+			select="ctrl.navbaractiv == 'Cases'" class="{{ctrl.getNavClass('Cases')}}" style="{{ctrl.getNavStyle('Cases')}}">
+			  <a ng-click="ctrl.navbaractiv = 'Cases';"   class="ng-binding">Cases</a>
+		</li>
+		<li ng-class="{active: active, disabled: false}" id="form-tab" heading="Parameter" active="true" title="Parameters" 
+				select="ctrl.navbaractiv == 'Parameters'" class="{{ctrl.getNavClass('Parameters')}}" style="{{ctrl.getNavStyle('Parameters')}}">
+			  <a  ng-click="ctrl.navbaractiv='Parameters'" class="ng-binding">Parameters</a>
+		</li>
+
+	</ul>
+		
+		
+	<!--  ************************************************************  -->	
+	<!--  Tab Tasks		 										-->
+	<!--  ************************************************************  -->		
+	<!-- Keep it ng-show, else the file drop will not work ! -->	
+	<div class="col-lg-12" ng-show="ctrl.navbaractiv == 'Tasks'">
+		
+	</div>
+			
+	<!--  ************************************************************  -->	
+	<!--  Tab Cases		 										-->
+	<!--  ************************************************************  -->		
+	<!-- Keep it ng-show, else the file drop will not work ! -->	
+	<div class="col-lg-12" ng-show="ctrl.navbaractiv == 'Cases'">
+		<br>
+		<div class="panel panel-info">
+			<div class="panel-heading"><input ng-model="ctrl.searchcases.show" type="checkbox">Filters</div>
+			<div class="panel panel-body" ng-if="ctrl.searchcases.show">
+				<div class="form-group row">
+					<label for="example-datetime-local-input" class="col-sm-2 col-form-label">Scope</label>
+					<div class="col-sm-10">
+							<input ng-model="ctrl.searchcases.active" type="checkbox" title="Search in active case" class="form-check-input " >Active cases
+							<input ng-model="ctrl.searchcases.archive" type="checkbox" title="Search in archive case" class="form-check-input" >Archive cases
+							<input ng-model="ctrl.searchcases.external" type="checkbox" title="Search in an external database" class="form-check-input" >External Archive database
+					</div>
+				</div>
+				<div class="form-group row">
+					<label for="example-datetime-local-input" class="col-sm-2 col-form-label">Year</label>
+					 <div class="col-sm-10"><input ng-model="ctrl.searchcases.year" type="number" title="Year" class="form-control form-control-sm" ></div>
+				</div>
+				<div class="form-group row">
+					<label for="example-datetime-local-input" class="col-sm-2 col-form-label">Text</label>
+					<div class="col-sm-10"><input ng-model="ctrl.searchcases.text"  title="Search in indexes" class="form-control form-control-sm" ></div>
+				</div>
+				<div class="form-group row">
+					<label for="example-datetime-local-input" class="col-sm-2 col-form-label">Case Id</label>
+					<div class="col-sm-10"><input ng-model="ctrl.searchcases.caseid" type="number"  title="" class="form-control form-control-sm" ></div>
+				</div>
+				<div class="form-group row">
+					<label for="example-datetime-local-input" class="col-sm-2 col-form-label">Process Name</label>
+					<div class="col-sm-10"><input ng-model="ctrl.searchcases.processname"  title="" class="form-control form-control-sm" ></div>
+				</div>
+				<div class="form-group row">
+					<label for="example-datetime-local-input" class="col-sm-2 col-form-label">Case creation</label>
+					<div class="col-sm-4"><input ng-model="ctrl.searchcases.startdatebeg" type="datetime-local" title="" class="form-control form-control-sm" ></div>
+					<div class="col-sm-1">To</div>
+					<div class="col-sm-4"><input ng-model="ctrl.searchcases.startdateend" type="datetime-local" title="" class="form-control form-control-sm" ></div>
+				</div>
+				<div class="form-group row">
+					<label for="example-datetime-local-input" class="col-sm-2 col-form-label">Case Ended</label>
+					<div class="col-sm-4"><input ng-model="ctrl.searchcases.enddatebeg" type="datetime-local"  title="" class="form-control form-control-sm"></div>
+					<div class="col-sm-1">To</div>
+					<div class="col-sm-4"><input ng-model="ctrl.searchcases.enddateend" type="datetime-local"  title="" class="form-control form-control-sm"></div>					
+				</div>
+				<div class="form-group row">
+					<div class="col-sm-2"></div>
+					<div class="col-sm-10">
+							<button ng-click="ctrl.searchCases()" class="btn btn-info btn-xs" ng-disabled="ctrl.inprogress">Search</button>		
+							&nbsp;&nbsp;&nbsp;
+							<div ng-if="ctrl.inprogress">
+								<span class="Loading">.</span>
+							</div>
+					</div>
+				</div>
+				<div class="form-group row">
+					<div class="col-sm-4">
+						Cases per page:	<select ng-model="ctrl.searchcases.caseperpages" >
+				 				<option id="25">25</option>
+				 				<option id="50">50</option>
+				 				<option id="100">100</option>
+				 				<option id="500">500</option>
+						</select>
+					</div>
+					<div class="col-sm-4">
+						Order by:	<select ng-model="ctrl.searchcases.orderby" >
+				 				<option value="origin">Origin</option>
+				 				<option value="caseid">Case ID</option>
+				 				<option value="processname">Process Name</option>
+				 				<option value="startdate">Start Date</option>
+				 				<option value="enddate">End Date</option>
+				 				<option value="stringindex1">Index 1</option>
+				 				<option value="stringindex2">Index 2</option>
+				 				<option value="stringindex3">Index 3</option>
+				 				<option value="stringindex4">Index 4</option>
+				 				<option value="stringindex5">Index 5</option>
+						</select>
+						<select ng-model="ctrl.searchcases.orderdirection" >
+				 				<option value="asc">Ascendant</option>
+				 				<option value="desc">Descendant</option>
+						</select>
+						
+					</div>
+				</div>
+			</div>
+		</div> <!--  end filter -->
+		<div>{{ctrl.cases.first}}-{{ctrl.cases.last}} of {{ctrl.cases.count}}</div>
+		<table class="table table-striped table-hover table-condensed">
+			<tr> 
+				<th>Origin</th>
+				<th>Case ID</th>
+				<th>Process name</th>
+				<th>Process Version</th>
+				<th>Start date</th>
+				<th>Started by</th>
+				<th>End date</th>
+				<th>Index 1</th>
+				<th>Index 2</th>
+				<th>Index 3</th>
+				<th>Index 4</th>
+				<th>Index 5</th>
+				<th></th>
+			</tr>
+			<tbody ng-repeat="case in ctrl.cases.list">
+				<tr>
+					<td>{{case.scope}}</td>
+					<td>{{case.caseid}}</td>
+					<td>{{case.processname}}</td>
+					<td>{{case.processversion}}</td>
+					<td>{{case.startdatest}}</td>
+					<td>{{case.startbyname}}</td>
+					<td>{{case.enddatest}}</td>
+					<td>{{case.stringindex1}}</td>
+					<td>{{case.stringindex2}}</td>
+					<td>{{case.stringindex3}}</td>
+					<td>{{case.stringindex4}}</td>
+					<td>{{case.stringindex5}}</td>
+				</tr>
+				
+			</tbody>
+		</table>		
+	</div>
+	<!--  ************************************************************  -->	
+	<!--  Tab Parameters		 										-->
+	<!--  ************************************************************  -->		
+	<!-- Keep it ng-show, else the file drop will not work ! -->	
+	<div class="col-lg-12" ng-show="ctrl.navbaractiv == 'Parameters'">
+	
+		<div class="form-group row">
+			<label for="example-datetime-local-input" class="col-sm-2 col-form-label">Data Source</label>
+			<div class="col-sm-10">
+				<input ng-model="ctrl.parameter.datasource"  class="form-check-input " >
+			</div>
+		</div>
+		<div class="form-group row">
+			<label for="example-datetime-local-input" class="col-sm-2 col-form-label">Open Search Case</label>
+			 <div class="col-sm-10">
+			 	<select ng-model="ctrl.parameter.showsearchcase" >
+				 	<option id="open">Open Every time</option>
+				 	<option id="open">Close Every time</option>
+				 	<option id="open">Open only if empty</option>
+			 	</select>
+			 </div>
+		</div>
+		<div class="form-group row">
+			<label for="example-datetime-local-input" class="col-sm-2 col-form-label">Banner</label>
+			 <div class="col-sm-10">
+			 	<select ng-model="ctrl.parameter.showbanner" >
+				 	<option id="open">Show</option>
+				 	<option id="open">Hide</option>
+			 	</select>
+			 </div>
+		</div>
+		<button ng-click="ctrl.saveParameters()" class="btn btn-info btn-xs" ng-disabled="ctrl.inprogress">Save Parameters</button>		
+							&nbsp;&nbsp;&nbsp;
+		<div ng-if="ctrl.inprogress">
+			<span class="Loading">.</span>
+		</div>
+				
+	</div>
+</div>		
+
+
+<!-- Third party dependencies -->
+
+<script src="3rd-party/jquery.min.js"></script>
+
+<script src="3rd-party/angular.min.js"></script>
+
+<script src="3rd-party/angular-resource.min.js"></script>
+<script src="3rd-party/angular-cookies.min.js"></script>
+<script src="3rd-party/bootstrap/js/bootstrap.min.js"></script>
+<script src="3rd-party/angular-bootstrap-tpls.min.js"></script>
+<script src="3rd-party/angular-sanitize.min.js"></script> 
+
+<!--  Material -->  
+<script src="3rd-party/angular-animate.min.js"></script>  
+<script src="3rd-party/angular-aria.min.js"></script>  
+<script src="3rd-party/angular-messages.min.js"></script>  
+<script src="3rd-party/angular-material.min.js"></script>  
+
+
+
+
+
+  
+
+<!-- Application dependencies -->
+<!-- to be sure to reload every time the JS file, add this marker -->
+<script src="pageResource?page=custompage_explorer&location=explorermonitor.js&t=@_CURRENTTIMEMILIS_@"></script>
+
+
+
+
+</body>
+</html>		
