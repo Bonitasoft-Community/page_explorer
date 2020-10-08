@@ -6,7 +6,7 @@
 (function() {
 
 
-var appCommand = angular.module('explorermonitorapp', [ 'ui.bootstrap','ngSanitize' ]);
+var appCommand = angular.module("explorermonitorapp", [ "ui.bootstrap","ngSanitize" ]);
 
 
 /* Material : for the autocomplete
@@ -29,30 +29,28 @@ var appCommand = angular.module('explorermonitorapp', [ 'ui.bootstrap','ngSaniti
 // --------------------------------------------------------------------------
 
 // Ping the server
-appCommand.controller('ExplorerControler',
+appCommand.controller("ExplorerControler",
 	function ( $http, $scope,$sce,$filter ) {
 
-	this.pingdate='';
-	this.pinginfo='';
-	this.listevents='';
+	this.listevents="";
 	this.inprogress=false;
 	
 	this.navbaractiv = "Cases";
-	this.getNavClass = function( tabtodisplay )
+	this.getNavClass = function( tabtodisplay, navbaractive )
 	{
-		if (this.navbaractiv === tabtodisplay)
-			return 'ng-isolate-scope active';
-		return 'ng-isolate-scope';
+		if (navbaractive === tabtodisplay)
+			return "ng-isolate-scope active";
+		return "ng-isolate-scope";
 	}
 
-	this.getNavStyle = function( tabtodisplay )
+	this.getNavStyle = function( tabtodisplay, navbaractive )
 	{
-		if (this.navbaractiv === tabtodisplay)
-			return 'border: 1px solid #c2c2c2;border-bottom-color: transparent;';
-		return 'background-color:#cbcbcb';
+		if (navbaractive === tabtodisplay)
+			return "border: 1px solid #c2c2c2;border-bottom-color: transparent;";
+		return "background-color:#cbcbcb";
 	}
 	
-	
+	<!-- Search case is all parameters to search -->
 	this.searchcases =  { "active": true, 
 			"archive":true,
 			"external":true, 
@@ -64,25 +62,27 @@ appCommand.controller('ExplorerControler',
 			"startdateend":"",
 			"datebeg":"",
 			"enddateend":"",			
-			"enddate":"",
-			"show" : true}
+			"enddate":""}
 	this.cases={};
+	
+	
 	this.searchCases = function()
 	{
 		
 		var self=this;
 		self.inprogress=true;
+		self.originprogress="searcase";
 		// 7.6 : the server force a cache on all URL, so to bypass the cache, then create a different URL
 		var d = new Date();
 		var json = encodeURIComponent(angular.toJson(this.searchcases, true));
-		self.listevents='';
+		self.listevents="";
 		// console.log("operationJob Call HTTP");
 
 
-		$http.get( '?page=custompage_explorer&action=searchCases&paramjson=' + json+'&t='+Date.now())
+		$http.get( "?page=custompage_explorer&action=searchCases&paramjson=" + json+"&t="+Date.now())
 				.success( function ( jsonResult, statusHttp, headers, config ) {
 					// connection is lost ?
-					if (statusHttp==401 || typeof jsonResult === 'string') {
+					if (statusHttp==401 || typeof jsonResult === "string") {
 						console.log("Redirected to the login page !");
 						window.location.reload();
 					}
@@ -105,11 +105,134 @@ appCommand.controller('ExplorerControler',
 	}
 
 	// -----------------------------------------------------------------------------------------
+	//  										GUI Case
+	// -----------------------------------------------------------------------------------------
+
+	 
+	this.casegui= { "showcasepanel": false,"showsearchpanel": true,   "showfilters":true,
+			"navbaractiv" : "Overview",
+			"showcaseurl":"",			
+			"archivecase" : {
+				"variables" : [ {"name":"Hello", "value":"the word"} ]
+			} };
+	/*
+			{ "field" [ 
+				{"name":"Hello", "value":"the word"}], 
+			  "doc": [ {"name", "invice"}]}};
+	}
+	*/
+	this.resetCaseFilter = function() {
+		this.searchcases =  {}; 
+	}
+
+	this.showCasePanel=function( show ) {
+		this.casegui.showcasepanel = show;
+		this.casegui.showsearchpanel= ! show;
+		console.log("Show CasePanelWidh="+this.casegui.showsearchpanel);
+	}
+	this.showCaseOverview = function (caseselected ) {
+		var self=this;
+		self.showCasePanel( true );
+		self.casegui.showcaseurl = caseselected.urloverview;
+		self.casegui.caseselected = caseselected;
+		self.casegui.navbaractiv = "Overview";
+		// the case maybe a External archive, then ask the content
+		
+
+		self.inprogress=true;
+		self.originprogress="showCaseOverview";
+		var param = { "caseid" : caseselected.caseid, "scope" : caseselected.scope };			
+		var json = encodeURIComponent(angular.toJson(param, true));
+
+		$http.get( "?page=custompage_explorer&action=loadcase&paramjson=" + json+"&t="+Date.now())
+		.success( function ( jsonResult, statusHttp, headers, config ) {
+			// connection is lost ?
+			if (statusHttp==401 || typeof jsonResult === "string") {
+				console.log("Redirected to the login page !");
+				window.location.reload();
+			}
+			self.inprogress=false;
+			console.log("load case"+jsonResult);
+			self.casegui.externalcase 	= jsonResult.externalcase;
+			self.casegui.tasks  		= jsonResult.tasks;
+			self.casegui.comments  		= jsonResult.comments;
+		} )
+		.error( function ( jsonResult, statusHttp, headers, config ) {
+			console.log("ERROR LOAD CASE"+jsonResult);
+			self.inprogress=false;
+		});
+		
+
+	
+		
+	}
+	this.refreshDate= new Date();
+
+	this.downloadCaseDocument = function(doc)
+	{
+		
+		// ["+parameterdef.name+"]");
+		var param={"docid": doc.id, "caseid":doc.processinstance};			
+		var json = encodeURIComponent(angular.toJson(param, true));
+		// do not calculate a new date now:we will have a recursive call in
+		// Angular
+		console.log("downloadParameterFile: ?page=custompage_explorer&action=downloaddoc&paramjson=" + json+'&t='+this.refreshDate.getTime());
+		return "?page=custompage_explorer&action=downloaddoc&paramjson=" + json+'&t='+this.refreshDate.getTime();
+	}
+	// -----------------------------------------------------------------------------------------
 	//  										Parameter
 	// -----------------------------------------------------------------------------------------
 	
 	this.parameter = {};
+	this.saveParameters = function() {
+		var self=this;
+		self.inprogress=true;
+		self.originprogress="saveParameters";
+
+		var json = encodeURI( angular.toJson( self.parameter, false));
+		
+		// 7.6 : the server force a cache on all URL, so to bypass the cache, then create a different URL
+		var d = new Date();
+		
+		$http.get( "?page=custompage_searchCases&action=saveparameters&paramjson="+json +"&t="+d.getTime())
+				.success( function ( jsonResult, statusHttp, headers, config ) {
+					// connection is lost ?
+					if (statusHttp==401 || typeof jsonResult === "string") {
+						console.log("Redirected to the login page !");
+						window.location.reload();
+					}
+					console.log("history",jsonResult);
+					self.listevents		= jsonResult.listevents;
+					self.inprogress=false;
+				})
+				.error( function() {
+					});
+	}
+	this.user={ "isadmin":false};
 	
+	this.loadparameters =function() {
+		var self=this;
+		self.inprogress=true;
+		self.originprogress="loadParameters";
+
+		// 7.6 : the server force a cache on all URL, so to bypass the cache, then create a different URL
+		var d = new Date();
+		
+		$http.get( "?page=custompage_searchCases&action=loadparameters&t="+d.getTime() )
+				.success( function ( jsonResult, statusHttp, headers, config ) {
+					// connection is lost ?
+					if (statusHttp==401 || typeof jsonResult === "string") {
+						console.log("Redirected to the login page !");
+						window.location.reload();
+					}
+					self.parameter 		= jsonResult;
+					self.listevents		= jsonResult.listevents;
+					self.inprogress		= false;
+					self.user 			= jsonResult.user;
+				})
+				.error( function() {
+					});
+	}
 	// -----------------------------------------------------------------------------------------
 	//  										Autocomplete
 	// -----------------------------------------------------------------------------------------
@@ -120,19 +243,21 @@ appCommand.controller('ExplorerControler',
 		console.log("QueryUser HTTP CALL["+searchText+"]");
 		
 		self.autocomplete.inprogress=true;
+
 		self.autocomplete.search = searchText;
 		self.inprogress=true;
+		self.originprogress="queryusers";
 		
-		var param={ 'userfilter' :  self.autocomplete.search};
+		var param={ "userfilter" :  self.autocomplete.search};
 		
 		var json = encodeURI( angular.toJson( param, false));
 		// 7.6 : the server force a cache on all URL, so to bypass the cache, then create a different URL
 		var d = new Date();
 		
-		return $http.get( '?page=custompage_searchCases&action=queryusers&paramjson='+json+'&t='+d.getTime() )
+		return $http.get( "?page=custompage_searchCases&action=queryusers&paramjson="+json+"&t="+d.getTime() )
 		.then( function ( jsonResult, statusHttp, headers, config ) {
 			// connection is lost ?
-			if (statusHttp==401 || typeof jsonResult === 'string') {
+			if (statusHttp==401 || typeof jsonResult === "string") {
 				console.log("Redirected to the login page !");
 				window.location.reload();
 			}
@@ -160,16 +285,16 @@ appCommand.controller('ExplorerControler',
 		var mystyle = {         
         headers:true,        
 			columns: [  
-			{ columnid: 'name', title: 'Name'},
-			{ columnid: 'version', title: 'Version'},
-			{ columnid: 'state', title: 'State'},
-			{ columnid: 'deployeddate', title: 'Deployed date'},
+			{ columnid: "name", title: "Name"},
+			{ columnid: "version", title: "Version"},
+			{ columnid: "state", title: "State"},
+			{ columnid: "deployeddate", title: "Deployed date"},
 			],         
 		};  
 	
         //get current system date.         
         var date = new Date();  
-        $scope.CurrentDateTime = $filter('date')(new Date().getTime(), 'MM/dd/yyyy HH:mm:ss');          
+        $scope.CurrentDateTime = $filter("date")(new Date().getTime(), "MM/dd/yyyy HH:mm:ss");          
 		var trackingJson = this.listprocesses
         //Create XLS format using alasql.js file.  
         alasql('SELECT * INTO XLS("Process_' + $scope.CurrentDateTime + '.xls",?) FROM ?', [mystyle, trackingJson]);  
@@ -179,56 +304,12 @@ appCommand.controller('ExplorerControler',
 	// -----------------------------------------------------------------------------------------
 	//  										Properties
 	// -----------------------------------------------------------------------------------------
-	this.propsFirstName='';
-	this.saveParameters = function() {
-		var self=this;
-		self.inprogress=true;
-		
-		var json = encodeURI( angular.toJson( self.parameter, false));
-		
-		// 7.6 : the server force a cache on all URL, so to bypass the cache, then create a different URL
-		var d = new Date();
-		
-		$http.get( '?page=custompage_searchCases&action=saveparameters&paramjson='+json +'&t='+d.getTime())
-				.success( function ( jsonResult, statusHttp, headers, config ) {
-					// connection is lost ?
-					if (statusHttp==401 || typeof jsonResult === 'string') {
-						console.log("Redirected to the login page !");
-						window.location.reload();
-					}
-					console.log("history",jsonResult);
-					self.listevents		= jsonResult.listevents;
-					self.inprogress=false;
-				})
-				.error( function() {
-					});
-	}
-	
-	this.loadparameters =function() {
-		var self=this;
-		self.inprogress=true;
-		
-		// 7.6 : the server force a cache on all URL, so to bypass the cache, then create a different URL
-		var d = new Date();
-		
-		$http.get( '?page=custompage_searchCases&action=loadparameters&t='+d.getTime() )
-				.success( function ( jsonResult, statusHttp, headers, config ) {
-					// connection is lost ?
-					if (statusHttp==401 || typeof jsonResult === 'string') {
-						console.log("Redirected to the login page !");
-						window.location.reload();
-					}
-					self.parameter 		= jsonResult;
-					self.listevents		= jsonResult.listevents;
-					self.inprogress		= false;
-		
-				})
-				.error( function() {
-					});
-	}
+	this.propsFirstName="";
+
 	this.init = function() {
 		this.searchcases.show=true;
 		this.loadparameters();
+    
 	}
 	this.init();
 	

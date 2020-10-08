@@ -9,7 +9,7 @@
 <html class="no-js"> <!--<![endif]-->
 <head>
     <meta charset="utf-8">
-    <title>Ping</title>
+    <title>Explorer</title>
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width">
     <link rel="stylesheet" href="style/animate.css" />
@@ -50,7 +50,7 @@
 		<table><tr><td><h1>Explorer</h1></td><td rowspan="2"><img src="img/icebreaker.jpg" width="150" heigth="150" /></td></tr>
 			<tr><td>
 				<center>
-					V1.0.0 (Sept 25, 2020)
+					V1.0.0 (Oct 7, 2020)
 				</center>
 			</td></tr>
 			<tr><td>
@@ -60,7 +60,6 @@
 		</center>
 	</div>
 
-
 	<ul class="nav nav-tabs"  ng-class="{'nav-stacked': vertical, 'nav-justified': justified}" style="border-bottom: 1px solid #c2c2c2;">
 		<!-- <li ng-class="{active: active, disabled: false}" id="form-tab" heading="All" active="true" title="Tasks" 
 			select="ctrl.navbaractiv == 'Tasks'" class="{{ctrl.getNavClass('Tasks')}}" style="{{ctrl.getNavStyle('Tasks')}}">
@@ -68,11 +67,12 @@
 		</li>
 		 -->
 		<li ng-class="{active: active, disabled: false}" id="form-tab" heading="All" active="true" title="Cases" 
-			select="ctrl.navbaractiv == 'Cases'" class="{{ctrl.getNavClass('Cases')}}" style="{{ctrl.getNavStyle('Cases')}}">
+			select="ctrl.navbaractiv == 'Cases'" class="{{ctrl.getNavClass('Cases',ctrl.navbaractiv)}}" style="{{ctrl.getNavStyle('Cases',ctrl.navbaractiv)}}">
 			  <a ng-click="ctrl.navbaractiv = 'Cases';"   class="ng-binding">Cases</a>
 		</li>
-		<li ng-class="{active: active, disabled: false}" id="form-tab" heading="Parameter" active="true" title="Parameters" 
-				select="ctrl.navbaractiv == 'Parameters'" class="{{ctrl.getNavClass('Parameters')}}" style="{{ctrl.getNavStyle('Parameters')}}">
+		<li ng-if="ctrl.user.isadmin"  
+			ng-class="{active: active, disabled: false}" id="form-tab" heading="Parameter" active="true" title="Parameters" 
+				select="ctrl.navbaractiv == 'Parameters'" class="{{ctrl.getNavClass('Parameters',ctrl.navbaractiv)}}" style="{{ctrl.getNavStyle('Parameters',ctrl.navbaractiv)}}">
 			  <a  ng-click="ctrl.navbaractiv='Parameters'" class="ng-binding">Parameters</a>
 		</li>
 
@@ -93,121 +93,303 @@
 	<!-- Keep it ng-show, else the file drop will not work ! -->	
 	<div class="col-lg-12" ng-show="ctrl.navbaractiv == 'Cases'">
 		<br>
-		<div class="panel panel-info">
-			<div class="panel-heading"><input ng-model="ctrl.searchcases.show" type="checkbox">Filters</div>
-			<div class="panel panel-body" ng-if="ctrl.searchcases.show">
-				<div class="form-group row">
-					<label for="example-datetime-local-input" class="col-sm-2 col-form-label">Scope</label>
-					<div class="col-sm-10">
-							<input ng-model="ctrl.searchcases.active" type="checkbox" title="Search in active case" class="form-check-input " >Active cases
-							<input ng-model="ctrl.searchcases.archive" type="checkbox" title="Search in archive case" class="form-check-input" >Archive cases
-							<input ng-model="ctrl.searchcases.external" type="checkbox" title="Search in an external database" class="form-check-input" >External Archive database
-					</div>
-				</div>
-				<div class="form-group row">
-					<label for="example-datetime-local-input" class="col-sm-2 col-form-label">Year</label>
-					 <div class="col-sm-10"><input ng-model="ctrl.searchcases.year" type="number" title="Year" class="form-control form-control-sm" ></div>
-				</div>
-				<div class="form-group row">
-					<label for="example-datetime-local-input" class="col-sm-2 col-form-label">Text</label>
-					<div class="col-sm-10"><input ng-model="ctrl.searchcases.text"  title="Search in indexes" class="form-control form-control-sm" ></div>
-				</div>
-				<div class="form-group row">
-					<label for="example-datetime-local-input" class="col-sm-2 col-form-label">Case Id</label>
-					<div class="col-sm-10"><input ng-model="ctrl.searchcases.caseid" type="number"  title="" class="form-control form-control-sm" ></div>
-				</div>
-				<div class="form-group row">
-					<label for="example-datetime-local-input" class="col-sm-2 col-form-label">Process Name</label>
-					<div class="col-sm-10"><input ng-model="ctrl.searchcases.processname"  title="" class="form-control form-control-sm" ></div>
-				</div>
-				<div class="form-group row">
-					<label for="example-datetime-local-input" class="col-sm-2 col-form-label">Case creation</label>
-					<div class="col-sm-4"><input ng-model="ctrl.searchcases.startdatebeg" type="datetime-local" title="" class="form-control form-control-sm" ></div>
-					<div class="col-sm-1">To</div>
-					<div class="col-sm-4"><input ng-model="ctrl.searchcases.startdateend" type="datetime-local" title="" class="form-control form-control-sm" ></div>
-				</div>
-				<div class="form-group row">
-					<label for="example-datetime-local-input" class="col-sm-2 col-form-label">Case Ended</label>
-					<div class="col-sm-4"><input ng-model="ctrl.searchcases.enddatebeg" type="datetime-local"  title="" class="form-control form-control-sm"></div>
-					<div class="col-sm-1">To</div>
-					<div class="col-sm-4"><input ng-model="ctrl.searchcases.enddateend" type="datetime-local"  title="" class="form-control form-control-sm"></div>					
-				</div>
-				<div class="form-group row">
-					<div class="col-sm-2"></div>
-					<div class="col-sm-10">
-							<button ng-click="ctrl.searchCases()" class="btn btn-info btn-xs" ng-disabled="ctrl.inprogress">Search</button>		
-							&nbsp;&nbsp;&nbsp;
-							<div ng-if="ctrl.inprogress">
-								<span class="Loading">.</span>
+		<table style="width:100%">
+		<tr>
+			<td style="vertical-align: top;" ng-if="ctrl.casegui.showsearchpanel">
+				<div class="panel panel-default">
+					<div class="panel-heading"><input ng-model="ctrl.casegui.showfilters" type="checkbox">Filters</div>
+					<div class="panel panel-body" ng-if="ctrl.casegui.showfilters">
+						<div class="form-group row">
+							<label for="example-datetime-local-input" class="col-sm-1 col-form-label">Scope</label>
+							<div class="col-sm-11">
+									<input ng-model="ctrl.searchcases.active" type="checkbox" title="Search in active case" class="form-check-input " >Active cases
+									<input ng-model="ctrl.searchcases.archive" type="checkbox" title="Search in archive case" class="form-check-input" >Archive cases
+									<input ng-model="ctrl.searchcases.external" type="checkbox" title="Search in an external database" class="form-check-input" >External Archive database
 							</div>
-					</div>
-				</div>
-				<div class="form-group row">
-					<div class="col-sm-4">
-						Cases per page:	<select ng-model="ctrl.searchcases.caseperpages" >
-				 				<option id="25">25</option>
-				 				<option id="50">50</option>
-				 				<option id="100">100</option>
-				 				<option id="500">500</option>
-						</select>
-					</div>
-					<div class="col-sm-4">
-						Order by:	<select ng-model="ctrl.searchcases.orderby" >
-				 				<option value="origin">Origin</option>
-				 				<option value="caseid">Case ID</option>
-				 				<option value="processname">Process Name</option>
-				 				<option value="startdate">Start Date</option>
-				 				<option value="enddate">End Date</option>
-				 				<option value="stringindex1">Index 1</option>
-				 				<option value="stringindex2">Index 2</option>
-				 				<option value="stringindex3">Index 3</option>
-				 				<option value="stringindex4">Index 4</option>
-				 				<option value="stringindex5">Index 5</option>
-						</select>
-						<select ng-model="ctrl.searchcases.orderdirection" >
-				 				<option value="asc">Ascendant</option>
-				 				<option value="desc">Descendant</option>
-						</select>
+						</div>
+						<div class="form-group row">
+							<label for="example-datetime-local-input" class="col-sm-1 col-form-label">Year</label>
+							 <div class="col-sm-5"><select ng-model="ctrl.searchcases.year" type="number" title="Year" class="form-control form-control-sm" >
+							  		<option value=""></option>							 
+							 		<option value="2010">2010</option>
+							 		<option value="2011">2011</option>
+							 		<option value="2012">2012</option>
+							 		<option value="2013">2013</option>
+							 		<option value="2014">2014</option>
+							 		<option value="2015">2015</option>
+							 		<option value="2016">2016</option>
+							 		<option value="2017">2017</option>
+							 		<option value="2018">2018</option>
+							 		<option value="2019">2019</option>
+							 		<option value="2020">2020</option>
+							 		<option value="2021">2021</option>
+							 		<option value="2022">2022</option>
+							 		<option value="2023">2023</option>
+							 		<option value="2024">2024</option>
+							 		<option value="2025">2025</option>
+							 		<option value="2026">2026</option>
+							 		<option value="2027">2027</option>
+							 		<option value="2028">2028</option>
+							 		<option value="2029">2029</option>
+							 		<option value="2030">2030</option>
+							 	</select>
+							 </div>
+
+							<label for="example-datetime-local-input" class="col-sm-1 col-form-label">Process Name</label>
+							<div class="col-sm-5"><input ng-model="ctrl.searchcases.processname"  title="" class="form-control form-control-sm" ></div>
+						</div>
 						
+						<div class="form-group row">
+							<label for="example-datetime-local-input" class="col-sm-1 col-form-label">Text</label>
+							<div class="col-sm-5"><input ng-model="ctrl.searchcases.text"  title="Search in indexes" class="form-control form-control-sm" ></div>
+
+							<label for="example-datetime-local-input" class="col-sm-1 col-form-label">Case Id</label>
+							<div class="col-sm-5"><input ng-model="ctrl.searchcases.caseid" type="number"  title="" class="form-control form-control-sm" ></div>
+						</div>
+						<div class="form-group row">
+							<label for="example-datetime-local-input" class="col-sm-1 col-form-label">Case creation</label>
+							<div class="col-sm-2"><input ng-model="ctrl.searchcases.startdatebeg" type="datetime-local" title="" class="form-control form-control-sm" ></div>
+							<div class="col-sm-1">To</div>
+							<div class="col-sm-2"><input ng-model="ctrl.searchcases.startdateend" type="datetime-local" title="" class="form-control form-control-sm" ></div>
+
+							<label for="example-datetime-local-input" class="col-sm-1 col-form-label">Case Ended</label>
+							<div class="col-sm-2"><input ng-model="ctrl.searchcases.enddatebeg" type="datetime-local"  title="" class="form-control form-control-sm"></div>
+							<div class="col-sm-1">To</div>
+							<div class="col-sm-2"><input ng-model="ctrl.searchcases.enddateend" type="datetime-local"  title="" class="form-control form-control-sm"></div>					
+						</div>
+						<div class="form-group row">
+							<div class="col-sm-1"></div>
+							<div class="col-sm-6">
+									<button ng-click="ctrl.searchCases()" class="btn btn-info" ng-disabled="ctrl.inprogress">Search</button>		
+									&nbsp;&nbsp;&nbsp;
+									<div ng-if="ctrl.inprogress">
+										<span class="Loading">.</span>
+									</div>
+							</div>
+							<div class="col-sm-5" style="float: right">
+									<button ng-click="ctrl.resetCaseFilter()" class="btn btn-danger btn-xs" ng-disabled="ctrl.inprogress">Clear filters</button>		
+									<!-- <button ng-click="ctrl.saveCaseFilter()" class="btn btn-info btn-xs" ng-disabled="ctrl.inprogress">Save Filter</button> -->		
+							</div>
+						</div>
+						<div class="form-group row">
+							<div class="col-sm-4">
+								Cases per page:	<select ng-model="ctrl.searchcases.caseperpages" >
+						 				<option id="25">25</option>
+						 				<option id="50">50</option>
+						 				<option id="100">100</option>
+						 				<option id="500">500</option>
+								</select>
+							</div>
+							<div class="col-sm-4">
+								Order by:	<select ng-model="ctrl.searchcases.orderby" >
+						 				<option value="origin">Origin</option>
+						 				<option value="caseid">Case ID</option>
+						 				<option value="processname">Process Name</option>
+						 				<option value="startdate">Start Date</option>
+						 				<option value="enddate">End Date</option>
+						 				<option value="stringindex1">Index 1</option>
+						 				<option value="stringindex2">Index 2</option>
+						 				<option value="stringindex3">Index 3</option>
+						 				<option value="stringindex4">Index 4</option>
+						 				<option value="stringindex5">Index 5</option>
+								</select>
+								<select ng-model="ctrl.searchcases.orderdirection" >
+						 				<option value="asc">Ascendant</option>
+						 				<option value="desc">Descendant</option>
+								</select>
+								
+							</div>
+						</div>
+					</div>
+				</div> <!--  end filter -->
+				<div>{{ctrl.cases.first}}-{{ctrl.cases.last}} of {{ctrl.cases.count}}</div>
+				<table class="table table-striped table-hover table-condensed">
+					<tr> 
+						<th>Origin</th>
+						<th>Case ID</th>
+						<th>Process name</th>
+						<th>Process Version</th>
+						<th>Start date</th>
+						<th>Started by</th>
+						<th>End date</th>
+						<th>Index 1</th>
+						<th>Index 2</th>
+						<th>Index 3</th>
+						<th>Index 4</th>
+						<th>Index 5</th>
+						<th></th>
+					</tr>
+					<tbody ng-repeat="case in ctrl.cases.list">
+						<tr>
+							<td>{{case.scope}}</td>
+							<td><a ng-click="ctrl.showCaseOverview( case )">{{case.caseid}}</a></td>
+							<td>{{case.processname}}</td>
+							<td>{{case.processversion}}</td>
+							<td>{{case.startdatest}}</td>
+							<td>{{case.startbyname}}</td>
+							<td>{{case.enddatest}}</td>
+							<td>{{case.stringindex1}}</td>
+							<td>{{case.stringindex2}}</td>
+							<td>{{case.stringindex3}}</td>
+							<td>{{case.stringindex4}}</td>
+							<td>{{case.stringindex5}}</td>
+							<td>
+								<a ng-click="ctrl.showCaseOverview( case )">
+									<span class="glyphicon glyphicon-eye-open"></span></a>
+							</td>
+						</tr>
+						
+					</tbody>
+				</table>	
+		
+		 </td>
+			<td style="border-left: 3px solid #194063;vertical-align: top;" >
+				<!-- ov={{ctrl.casegui.showcasepanel}} / url={{ctrl.showcaseurl}} search={{ctrl.casegui.showsearchpanel}}-->
+				<table>
+				<tr><td>
+				<a ng-click="ctrl.showCasePanel( false )" ng-if="ctrl.casegui.showcasepanel == true" title="Hide the Case Overview panel and show the filter"><span class="glyphicon glyphicon-chevron-right"></span> </a>
+				<a ng-click="ctrl.showCasePanel( true )"  ng-if="ctrl.casegui.showcasepanel == false" title="Display the Case Overview panel"><span class="glyphicon glyphicon-chevron-left"></span> </a>	
+				</td><td><div ng-if="ctrl.casegui.showcasepanel"><h3>Case overview {{ctrl.casegui.caseselected.caseid}}</h3></div></td>
+				</tr>
+				</table>
+				
+				<div ng-if="ctrl.casegui.showcasepanel">
+					<ul class="nav nav-tabs"  ng-class="{'nav-stacked': vertical, 'nav-justified': justified}" style="border-bottom: 1px solid #c2c2c2;">
+						<li ng-class="{active: active, disabled: false}" id="form-tab" heading="All" active="true" title="Cases" 
+							select="ctrl.casegui.navbaractiv == 'Overview'" 
+							class="{{ctrl.getNavClass('Overview', ctrl.casegui.navbaractiv)}}" 
+							style="{{ctrl.getNavStyle('Overview', ctrl.casegui.navbaractiv)}}">
+		  						<a ng-click="ctrl.casegui.navbaractiv = 'Overview';"   class="ng-binding">Form</a>
+						</li>
+						<li ng-if="ctrl.user.isadmin" ng-class="{active: active, disabled: false}" id="form-tab" heading="All" active="true" title="Cases" 
+							select="ctrl.casegui.navbaractiv == 'Tasks'" 
+							class="{{ctrl.getNavClass('Tasks', ctrl.casegui.navbaractiv)}}" 
+							style="{{ctrl.getNavStyle('Tasks', ctrl.casegui.navbaractiv)}}">
+		  						<a ng-click="ctrl.casegui.navbaractiv = 'Tasks';"   class="ng-binding">Tasks</a>
+						</li>
+						<li ng-if="ctrl.user.isadmin" ng-class="{active: active, disabled: false}" id="form-tab" heading="All" active="true" title="Cases" 
+							select="ctrl.casegui.navbaractiv == 'Comments'" 
+							class="{{ctrl.getNavClass('Comments', ctrl.casegui.navbaractiv)}}" 
+							style="{{ctrl.getNavStyle('Comments', ctrl.casegui.navbaractiv)}}">
+		  						<a ng-click="ctrl.casegui.navbaractiv = 'Comments';"   class="ng-binding">Comments</a>
+						</li>
+					</ul>
+					
+					<!--  ************************************************************  -->	
+					<!--  Panel Overview -->	
+					
+					<div ng-if="ctrl.casegui.navbaractiv == 'Overview'">
+						<div class="CaseViewer Viewer-wrapper ng-isolate-scope" height="100%" ng-if="ctrl.casegui.showcaseurl">
+							<iframe src="{{ctrl.casegui.showcaseurl}}" width="100%" height="100%" frameborder="0" id="icaseoverview" onLoad="onLoadIFrame()"></iframe>
+						</div>
+						<div class="CaseViewer Viewer-wrapper ng-isolate-scope" height="100%" ng-if="ctrl.casegui.showcaseurl == null">
+							<!--  Loop on case -->
+							<div ng-repeat="case in ctrl.casegui.externalcase">
+								<div class="alert alert-info">Case {{case.caseid}}
+									<div ng-if="case.typeprocessinstance === 'root'">
+										</i>Started {{case.startdatest}}, Ended {{case.enddatest}}
+										Started by {{case.startedbyname}} {{case.startedbysubstitutename}}</i>
+									</div>
+									<div ng-if="case.typeprocessinstance === 'subprocess'">
+										Subprocess
+									</div>
+								</div>
+								<!--  variable -->
+								<div class="form-group row" ng-repeat="variable in case.variables">
+									<label for="example-datetime-local-input" class="col-sm-2 col-form-label">{{variable.name}}</label>								
+								 	<div class="col-sm-10">
+								 		<div ng-if="variable.bdmname">BDM <i>{{variable.bdmname}}</i></div>
+								 	<input readonly ng-model="variable.value" class="form-control form-control-sm" ></div>
+								</div>
+								<!--  Documents -->
+								<div class="form-group row" ng-repeat="doc in case.documents">
+									<label for="example-datetime-local-input" class="col-sm-2 col-form-label">{{doc.name}}</label>								
+								 	<div class="col-sm-10">
+								 		<div ng-if="doc.type =='doc'">
+								 			<table><tr><td style="padding: 10px;">
+									 			<center>
+									 		 	<div ng-if="doc.hascontent">
+									 		 	
+									 				<a href="{{ctrl.downloadCaseDocument( doc )}}" title="{{doc.author}}">
+									 					<span class="glyphicon glyphicon-file"></span><br>
+									 					{{doc.filename}}
+									 				</a>
+									 			</div>
+									 			<div ng-if="! doc.hascontent">
+									 				<a href="{{doc.url}}" title="{{doc.author}}">{{doc.url}}</a>
+									 			</div>
+									 			</center>
+									 		</td></tr></table>
+								 		</div>
+								 		<div ng-if="doc.type =='list'">
+								 			<table><tr><td ng-repeat="docitem in doc.value" style="padding: 10px;">
+								 				<center>
+								 				<div ng-if="docitem.hascontent">
+									 				<a href="{{ctrl.downloadCaseDocument( docitem )}}" title="{{docitem.author}}">
+									 					<span class="glyphicon glyphicon-file"></span><br>
+									 					{{docitem.filename}}
+									 				</a>
+									 			</div>
+									 			<div ng-if="! docitem.hascontent">
+									 				<a href="{{docitem.url}}" title="{{docitem.author}}">{{docitem.url}}</a>
+									 			</div>
+								 				</center>
+								 			</td></tr></table>
+								 		</div>
+	
+									</div>
+								</div>
+							</div> 
+						</div>
+					</div> <!--  end caseoveriew -->
+					
+					<!--  ************************************************************  -->	
+					<!--  Panel Tasks of a case -->	
+					
+					<div ng-if="ctrl.casegui.navbaractiv == 'Tasks'">
+						<h4>Tasks</h4>
+						<table>
+							<tr><th></th><th>Name</th><th>Type</th><th>Executed</th></tr>
+							<tr ng_repeat="task in ctrl.casegui.tasks">
+								<td style="padding: 10px 15px;">
+									<img ng-if="task.kind=='AUTOMATIC_TASK'" src="/bonita/theme/themeResource?theme=portal&location=skin/images/metadata_automaticTask_small.png"></img>
+									<img ng-if="task.kind=='CALL_ACTIVITY'" src="/bonita/theme/themeResource?theme=portal&location=skin/images/metadata_callactivity_small.png"></img>
+									<img ng-if="task.kind=='USER_TASK'" src="/bonita/theme/themeResource?theme=portal&location=skin/images/metadata-user.png"></img>
+									<img ng-if="task.kind=='LOOP_ACTIVITY'" src="/bonita/theme/themeResource?theme=portal&location=skin/images/metadata_loop_task.png"></img>
+									<img ng-if="task.kind=='MULTI_INSTANCE_ACTIVITY'" src="/bonita/theme/themeResource?theme=portal&location=skin/images/metadata_multi_instance_task.png"></img>
+								</td>
+								<td style="padding: 10px 15px;">
+									<span style="font-weight: bold;">Task Name:</span> {{task.displayname}}<br>
+									<span style="font-weight: bold;">Task:</span> {{task.name}}<br>
+								</td>
+								<td style="padding: 10px 15px;">
+									<span style="font-weight: bold;">Executed by:</span> {{task.executedbyname}}<br>
+									<span style="font-weight: bold;"><span class="glyphicon glyphicon-calendar"></span>Performed on:</span> {{task.enddatest}}
+							</tr>
+						</table>
+					</div>
+					
+					<!--  ************************************************************  -->	
+					<!--  Panel Comments -->	
+					<div ng-if="ctrl.casegui.navbaractiv == 'Comments'">
+						<h4>Comments</h4>
+						<table>
+							
+							<tbody ng_repeat="comment in ctrl.casegui.comments">
+								<tr>
+									<td colspan="2" style="padding: 10px 15px;border-radius: 5px;border: 2px solid #c2c2c2;min-height: 45px;">{{comment.content}}</td>
+								</tr>
+								<tr>
+									<td style="padding: 10px 15px;"><i>By {{comment.userbyname}}</i></td>
+									<td style="padding: 10px 15px;"><i>On {{comment.enddatest}}</i></td>
+								</tr>
+							</tbody>
+						</table>
 					</div>
 				</div>
-			</div>
-		</div> <!--  end filter -->
-		<div>{{ctrl.cases.first}}-{{ctrl.cases.last}} of {{ctrl.cases.count}}</div>
-		<table class="table table-striped table-hover table-condensed">
-			<tr> 
-				<th>Origin</th>
-				<th>Case ID</th>
-				<th>Process name</th>
-				<th>Process Version</th>
-				<th>Start date</th>
-				<th>Started by</th>
-				<th>End date</th>
-				<th>Index 1</th>
-				<th>Index 2</th>
-				<th>Index 3</th>
-				<th>Index 4</th>
-				<th>Index 5</th>
-				<th></th>
-			</tr>
-			<tbody ng-repeat="case in ctrl.cases.list">
-				<tr>
-					<td>{{case.scope}}</td>
-					<td>{{case.caseid}}</td>
-					<td>{{case.processname}}</td>
-					<td>{{case.processversion}}</td>
-					<td>{{case.startdatest}}</td>
-					<td>{{case.startbyname}}</td>
-					<td>{{case.enddatest}}</td>
-					<td>{{case.stringindex1}}</td>
-					<td>{{case.stringindex2}}</td>
-					<td>{{case.stringindex3}}</td>
-					<td>{{case.stringindex4}}</td>
-					<td>{{case.stringindex5}}</td>
-				</tr>
-				
-			</tbody>
-		</table>		
+				 
+			</td>
+		</table>	
 	</div>
 	<!--  ************************************************************  -->	
 	<!--  Tab Parameters		 										-->
@@ -222,9 +404,9 @@
 			</div>
 		</div>
 		<div class="form-group row">
-			<label for="example-datetime-local-input" class="col-sm-2 col-form-label">Open Search Case</label>
+			<label for="example-datetime-local-input" class="col-sm-2 col-form-label">Show Case Filter</label>
 			 <div class="col-sm-10">
-			 	<select ng-model="ctrl.parameter.showsearchcase" >
+			 	<select ng-model="ctrl.parameter.showcasefilter" >
 				 	<option id="open">Open Every time</option>
 				 	<option id="open">Close Every time</option>
 				 	<option id="open">Open only if empty</option>
@@ -249,6 +431,22 @@
 	</div>
 </div>		
 
+<script>
+function onLoadIFrame() {
+	console.log("OnLoadIframeScript");
+	// Adjusting the iframe height onload event
+    var iframes = document.querySelectorAll("iframe");
+    for( var i = 0; i < iframes.length; i++) {
+    	var height=iframes[ i ].contentWindow.document.body.scrollHeight;
+    	height+= 20;
+    	console.log("Found a Iframe! size="+iframes[ i ].contentWindow.document.body.scrollHeight+" set heigh="+height);
+        iframes[ i ].style.height = height + 'px';
+
+
+    }
+
+}
+</script>
 
 <!-- Third party dependencies -->
 

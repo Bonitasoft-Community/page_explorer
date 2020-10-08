@@ -3,13 +3,14 @@ package org.bonitasoft.explorer;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.TimeZone;
 
 public class TypesCast {
 
     /**
      * to share this date format in all the page
      */
-    public final static SimpleDateFormat sdfCompleteDate = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+    // public final static SimpleDateFormat sdfCompleteDate = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
 
     public static String getString(Object value, String defaultValue) {
         try {
@@ -59,16 +60,18 @@ public class TypesCast {
             return defaultValue;
         }
     }
-    private final static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    // private final static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     // 2020-10-01T00:33:00.000Z
-    private final static SimpleDateFormat sdfHtml5 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
     public static Long getHtml5ToLongDate(String dateSt, Long defaultDate) {
         if (dateSt==null)
             return defaultDate;
         try
         {
+            SimpleDateFormat sdfHtml5 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+            sdfHtml5.setTimeZone(TimeZone.getTimeZone("UTC"));
             Date date = sdfHtml5.parse(dateSt);
+            // Database is saved in GMT. So, we have to translate this time in UTC (not local time)
             return date.getTime();
         }
         catch(Exception e) 
@@ -93,6 +96,8 @@ public class TypesCast {
     public static String getHumanDate( Date date) {
         if (date == null)
             return "";
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
         return sdf.format(date);
     }
     public static String getHumanDuration(long durationInMsn, boolean withMs) {

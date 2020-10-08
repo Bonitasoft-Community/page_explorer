@@ -68,6 +68,7 @@ import org.bonitasoft.engine.bpm.process.ProcessInstanceSearchDescriptor;
 import org.bonitasoft.engine.business.data.BusinessDataRepository
 import org.bonitasoft.engine.session.APISession;
 import org.bonitasoft.engine.api.ProcessAPI;
+import org.bonitasoft.engine.api.ProfileAPI
 import org.bonitasoft.engine.api.IdentityAPI;
 import org.bonitasoft.engine.command.CommandDescriptor;
 import org.bonitasoft.engine.command.CommandCriterion;
@@ -130,23 +131,35 @@ public class Actions {
             HttpSession httpSession = request.getSession();            
             ProcessAPI processAPI = TenantAPIAccessor.getProcessAPI(apiSession);
             IdentityAPI identityAPI = TenantAPIAccessor.getIdentityAPI(apiSession);
-			
+            ProfileAPI profileAPI = TenantAPIAccessor.getProfileAPI(apiSession);
+            
             long tenantId = apiSession.getTenantId();          
 
-            Parameter parameter = Parameter.getInstanceFromJson(paramJsonSt, apiSession);
+            Parameter parameter = Parameter.getInstanceFromJson(paramJsonSt, tenantId, apiSession, processAPI, identityAPI, profileAPI);
             ExplorerAPI explorerAPI = ExplorerAPI.getInstance();
             
            	
 			if ("searchCases".equals(action))
 			{
-                actionAnswer.responseMap = explorerAPI.searchCases( parameter, pageResourceProvider, processAPI, identityAPI);
+                actionAnswer.responseMap = explorerAPI.searchCases( parameter, pageResourceProvider);
                 
-			} else if ("saveparameters".equals(action))    {
+            } else if ("loadcase".equals(action)) {
+                logger.info("loadcase");
+                actionAnswer.responseMap = explorerAPI.loadCase( parameter, pageResourceProvider);
+            } else if ("downloaddoc".equals(action)) {
+                listEvents = explorerAPI.downloadDocExternalAccess( parameter, response, pageResourceProvider);
+                if (BEventFactory.isError( listEvents)) {
+                    actionAnswer.responseMap.put("listevents",  BEventFactory.getHtml(listEvents));
+                } else {
+                    actionAnswer.isResponseMap=false;
+                } 
+                
+			} else if ("saveparameters".equals(action)) {
                 logger.info("Save properties paramJsonSt="+paramJsonSt);
-                actionAnswer.responseMap = explorerAPI.saveParameters( jsonParam, pageResourceProvider, processAPI, identityAPI);
+                actionAnswer.responseMap = explorerAPI.saveParameters( parameter, jsonParam, pageResourceProvider);
             } else if ("loadparameters".equals(action)) {
                 logger.info("Load loadparameters");
-                actionAnswer.responseMap = explorerAPI.loadParameters( jsonParam, pageResourceProvider, processAPI, identityAPI);
+                actionAnswer.responseMap = explorerAPI.loadParameters( parameter, jsonParam, pageResourceProvider);
             } else if ("queryusers".equals(action))
             {
                
