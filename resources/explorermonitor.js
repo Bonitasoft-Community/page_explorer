@@ -51,7 +51,7 @@ appCommand.controller("ExplorerControler",
 	}
 	
 	<!-- Search case is all parameters to search -->
-	this.searchcases =  { "active": true, 
+	this.searchcasesinitial =  { "active": true, 
 			"archive":true,
 			"external":true, 
 			"year": "", 
@@ -62,7 +62,12 @@ appCommand.controller("ExplorerControler",
 			"startdateend":"",
 			"datebeg":"",
 			"enddateend":"",			
-			"enddate":""}
+			"enddate":"",
+			"visibility" : "user",
+			"caseperpages": "100",
+			"orderby" : "caseid",
+			"orderdirection":"asc"};
+	this.searchcases =  angular.copy(this.searchcasesinitial);
 	this.cases={};
 	
 	
@@ -86,12 +91,12 @@ appCommand.controller("ExplorerControler",
 						console.log("Redirected to the login page !");
 						window.location.reload();
 					}
-					console.log("history",jsonResult);
-					self.cases.list 	= jsonResult.list;
-					self.cases.count 	= jsonResult.count;
-					self.cases.first 	= jsonResult.first;
-					self.cases.last 	= jsonResult.last;
-			         
+					// console.log("search",jsonResult);
+					self.cases.list 		= jsonResult.list;
+					self.cases.count 		= jsonResult.count;
+					self.cases.first 		= jsonResult.first;
+					self.cases.last 		= jsonResult.last;
+					self.cases.totalchronos = jsonResult.totalchronos;
 					
 					self.inprogress=false;
 						
@@ -122,7 +127,7 @@ appCommand.controller("ExplorerControler",
 	}
 	*/
 	this.resetCaseFilter = function() {
-		this.searchcases =  {}; 
+		this.searchcases =  angular.copy(this.searchcasesinitial);
 	}
 
 	this.showCasePanel=function( show ) {
@@ -179,6 +184,68 @@ appCommand.controller("ExplorerControler",
 		console.log("downloadParameterFile: ?page=custompage_explorer&action=downloaddoc&paramjson=" + json+'&t='+this.refreshDate.getTime());
 		return "?page=custompage_explorer&action=downloaddoc&paramjson=" + json+'&t='+this.refreshDate.getTime();
 	}
+
+	// -----------------------------------------------------------------------------------------
+	//  										save default filter
+	// -----------------------------------------------------------------------------------------
+
+	this.saveCaseFilter = function() {
+		var self=this;
+		self.inprogress=true;
+		self.originprogress="saveCaseFilter";
+
+		var json = encodeURI( angular.toJson( self.searchcases, false));
+		
+		// 7.6 : the server force a cache on all URL, so to bypass the cache, then create a different URL
+		var d = new Date();
+		
+		$http.get( "?page=custompage_searchCases&action=savecasefilter&paramjson="+json +"&t="+d.getTime())
+				.success( function ( jsonResult, statusHttp, headers, config ) {
+					// connection is lost ?
+					if (statusHttp==401 || typeof jsonResult === "string") {
+						console.log("Redirected to the login page !");
+						window.location.reload();
+					}
+					console.log("history",jsonResult);
+					self.listevents		= jsonResult.listevents;
+					self.inprogress=false;
+				})
+				.error( function() {
+					});
+	}
+	
+	this.user={ "isadmin":false};
+	
+	this.loadCaseFilter =function() {
+		var self=this;
+		self.inprogress=true;
+		self.originprogress="loadCaseFilter";
+
+		// 7.6 : the server force a cache on all URL, so to bypass the cache, then create a different URL
+		var d = new Date();
+		
+		$http.get( "?page=custompage_searchCases&action=loadcasefilter&t="+d.getTime() )
+				.success( function ( jsonResult, statusHttp, headers, config ) {
+					// connection is lost ?
+					if (statusHttp==401 || typeof jsonResult === "string") {
+						console.log("Redirected to the login page !");
+						window.location.reload();
+					}
+					self.searchcases 	= jsonResult.searchcases;
+					if (self.searchcases.startdatebeg)
+						self.searchcases.startdatebeg = new Date( self.searchcases.startdatebeg );
+					if (self.searchcases.startdateend)
+						self.searchcases.startdateend = new Date( self.searchcases.startdateend );
+					if (self.searchcases.enddatebeg)
+						self.searchcases.enddatebeg = new Date( self.searchcases.enddatebeg );
+					if (self.searchcases.enddateend)
+						self.searchcases.enddateend = new Date( self.searchcases.enddateend );
+					self.listevents		= jsonResult.listevents;
+					self.inprogress		= false;
+				})
+				.error( function() {
+					});
+	}
 	// -----------------------------------------------------------------------------------------
 	//  										Parameter
 	// -----------------------------------------------------------------------------------------
@@ -202,7 +269,7 @@ appCommand.controller("ExplorerControler",
 						window.location.reload();
 					}
 					console.log("history",jsonResult);
-					self.listevents		= jsonResult.listevents;
+					self.listeventssavesearchcase		= jsonResult.listevents;
 					self.inprogress=false;
 				})
 				.error( function() {
@@ -210,22 +277,32 @@ appCommand.controller("ExplorerControler",
 	}
 	this.user={ "isadmin":false};
 	
-	this.loadparameters =function() {
+	this.loadparamandfilter =function() {
 		var self=this;
 		self.inprogress=true;
-		self.originprogress="loadParameters";
+		self.originprogress="loadparamandfilter";
 
 		// 7.6 : the server force a cache on all URL, so to bypass the cache, then create a different URL
 		var d = new Date();
 		
-		$http.get( "?page=custompage_searchCases&action=loadparameters&t="+d.getTime() )
+		$http.get( "?page=custompage_searchCases&action=loadparamandfilter&t="+d.getTime() )
 				.success( function ( jsonResult, statusHttp, headers, config ) {
 					// connection is lost ?
 					if (statusHttp==401 || typeof jsonResult === "string") {
 						console.log("Redirected to the login page !");
 						window.location.reload();
 					}
-					self.parameter 		= jsonResult;
+					self.parameter 		= jsonResult.parameters;
+					self.searchcases	= jsonResult.searchcases;
+					if (self.searchcases.startdatebeg)
+						self.searchcases.startdatebeg = new Date( self.searchcases.startdatebeg );
+					if (self.searchcases.startdateend)
+						self.searchcases.startdateend = new Date( self.searchcases.startdateend );
+					if (self.searchcases.enddatebeg)
+						self.searchcases.enddatebeg = new Date( self.searchcases.enddatebeg );
+					if (self.searchcases.enddateend)
+						self.searchcases.enddateend = new Date( self.searchcases.enddateend );
+				
 					self.listevents		= jsonResult.listevents;
 					self.inprogress		= false;
 					self.user 			= jsonResult.user;
@@ -308,7 +385,7 @@ appCommand.controller("ExplorerControler",
 
 	this.init = function() {
 		this.searchcases.show=true;
-		this.loadparameters();
+		this.loadparamandfilter();
     
 	}
 	this.init();

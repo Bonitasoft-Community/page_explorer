@@ -157,9 +157,22 @@ public class Actions {
 			} else if ("saveparameters".equals(action)) {
                 logger.info("Save properties paramJsonSt="+paramJsonSt);
                 actionAnswer.responseMap = explorerAPI.saveParameters( parameter, jsonParam, pageResourceProvider);
+                
             } else if ("loadparameters".equals(action)) {
                 logger.info("Load loadparameters");
                 actionAnswer.responseMap = explorerAPI.loadParameters( parameter, jsonParam, pageResourceProvider);
+                
+            } else if ("savecasefilter".equals(action)) {
+                logger.info("Load loadparameters");
+                actionAnswer.responseMap = explorerAPI.saveFilter( parameter, jsonParam, pageResourceProvider);
+                
+            } else if ("loadcasefilter".equals(action)) {
+                logger.info("Load loadparameters");
+                actionAnswer.responseMap = explorerAPI.loadFilter( parameter, jsonParam, pageResourceProvider);
+                
+            } else if ("loadparamandfilter".equals(action)) {
+                logger.info("Load loadparameters");
+                actionAnswer.responseMap = explorerAPI.loadParametersAndFilter( parameter, jsonParam, pageResourceProvider);
             } else if ("queryusers".equals(action))
             {
                

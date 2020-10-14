@@ -80,6 +80,7 @@ public class DatabaseDefinition {
     public static final String BDE_FLOWNODEINSTANCE_FLOWNODEDEFINITIONID = "flownodefinitionid";
     public static final String BDE_FLOWNODEINSTANCE_KIND = "kind";
     public static final String BDE_FLOWNODEINSTANCE_ARCHIVEDATE = "archivedate";
+    public static final String BDE_FLOWNODEINSTANCE_ROOTCONTAINERID = "rootcontainerid";
     public static final String BDE_FLOWNODEINSTANCE_PROCESSINSTANCEID = "processinstanceid";
     public static final String BDE_FLOWNODEINSTANCE_PARENTCONTAINERID = "parentcontainerid";
     public static final String BDE_FLOWNODEINSTANCE_SOURCEOBJECTID = "sourceobjectid";

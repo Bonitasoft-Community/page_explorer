@@ -22,7 +22,7 @@ import org.bonitasoft.engine.search.Order;
 import org.bonitasoft.engine.search.SearchOptionsBuilder;
 import org.bonitasoft.engine.search.SearchResult;
 import org.bonitasoft.explorer.ExplorerAPI.Parameter;
-import org.bonitasoft.explorer.bonita.BonitaAccess;
+import org.bonitasoft.explorer.bonita.BonitaAccessSQL;
 import org.bonitasoft.explorer.external.ExternalAccess;
 import org.bonitasoft.log.event.BEvent;
 import org.bonitasoft.log.event.BEvent.Level;
@@ -33,71 +33,7 @@ import com.bonitasoft.engine.bpm.process.impl.ProcessInstanceSearchDescriptor;
 
 public class ExplorerCase {
 
-    public static final String JSON_STARTEDBYNAME = "startedbyname";            
-    public static final String JSON_STARTEDBYSUBSTITUTENAME = "startedbysubstitutename";            
-    public static final String JSON_TYPEPROCESSINSTANCE="typeprocessinstance";
-    public static final String JSON_TYPEPROCESSINSTANCE_V_SUBPROCESS = "subprocess";
-    public static final String JSON_TYPEPROCESSINSTANCE_V_ROOT = "root";
-    
-    public static final String JSON_VARIABLES = "variables";
-    public static final String JSON_PROCESSINSTANCE = "processinstance";
-    public static final String JSON_NAME = "name";
-    public static final String JSON_DISPLAYNAME ="displayname";
-    public static final String JSON_DISPLAYDESCRIPTION ="displaydescription";
-    public static final String JSON_BDMNAME = "bdmname";
-    public static final String JSON_BDMISMULTIPLE = "bdmismultiple";
-    public static final String JSON_CLASSNAME = "classname";
-    public static final String JSON_VALUE = "value";
-    public static final String JSON_TYPEVARIABLE = "type";
-    public static final String JSON_TYPEVARIABLE_V_STRING="string";
-    public static final String JSON_TYPEVARIABLE_V_DATE = "date";
-    public static final String JSON_TYPEVARIABLE_V_NUMBER = "number";
-    public static final String JSON_TYPEVARIABLE_V_LIST = "list";
-    public static final String JSON_TYPEVARIABLE_V_DOC = "doc";
-    
-    public static final String JSON_STARTBYNAME = "startbyname";
-    public static final String JSON_SCOPE = "scope";
-    public static final String JSON_SCOPE_V_EXTERNAL = "external";
-    public static final String JSON_SCOPE_V_ACTIVE = "active";
-    public static final String JSON_SCOPE_V_ARCHIVE = "archive";
-    
-    public static final String JSON_PROCESSVERSION = "processversion";
-    public static final String JSON_PROCESSNAME = "processname";
-    public static final String JSON_STARTDATE = "startdate";
-    public static final String JSON_STARTDATEST = "startdatest";
-    public static final String JSON_ENDDATE = "enddate";
-    public static final String JSON_ENDDATEST = "enddatest";
-    public static final String JSON_CASEID = "caseid";
-    public static final String JSON_PROCESSDEFINITIONID = "processid";
-
-    public static final String JSON_STRINGINDEX1 = "stringindex1";
-    public static final String JSON_STRINGINDEX2 = "stringindex2";
-    public static final String JSON_STRINGINDEX3 = "stringindex3";
-    public static final String JSON_STRINGINDEX4 = "stringindex4";
-    public static final String JSON_STRINGINDEX5 = "stringindex5";
-
-    public static final String JSON_URLOVERVIEW = "urloverview";
-
-    
-    
-    public static final String JSON_DOCUMENTS = "documents";
-    public static final String JSON_VERSION = "version";
-    public static final String JSON_ID  = "id";
-    public static final String JSON_KIND ="kind";
-    public static final String JSON_AUTHOR ="author";
-    public static final String JSON_FILENAME="filename";
-    public static final String JSON_MIMETYPE="mimetype";
-    public static final String JSON_URL ="url";
-    public static final String JSON_HASCONTENT ="hascontent";
-    public static final String JSON_EXECUTEDBY = "executedby";
-    public static final String JSON_EXECUTEDBYNAME = "executedbnyname";
-    public static final String JSON_EXECUTEDBYSUBSTITUTE = "executedby";
-    public static final String JSON_EXECUTEDBYSUBSTITUTENAME= "executedbyname";
-    public static final String JSON_USERBY = "userby";
-    public static final String JSON_USERBYNAME ="userbyname";
-    
-    public static final String JSON_CONTENT ="content";
-    
+  
     
     public static class ExplorerCaseResult {
 
@@ -107,7 +43,9 @@ public class ExplorerCase {
         public List<Map<String, Object>> externalcase = new ArrayList<>();
         public List<Map<String, Object>> listTasks = new ArrayList<>();
         public List<Map<String, Object>> listComments = new ArrayList<>();
-
+        private Map<String, Long> chronos = new HashMap<>();
+        private long totalChronos=0;
+        
         public int totalNumberOfResult = 0;
         public int firstrecord = 0;
         public int lastrecord = 0;
@@ -118,6 +56,10 @@ public class ExplorerCase {
             listComments.addAll( explorerExternal.listComments);
             listEvents.addAll(explorerExternal.listEvents);
             totalNumberOfResult += explorerExternal.totalNumberOfResult;
+        }
+        public void addChronometer(String name, long time ) {
+            chronos.put(name, time);
+            totalChronos+=time;
         }
         public Map<String, Object> toMap() {
             Map<String, Object> information = new HashMap<>();
@@ -130,20 +72,22 @@ public class ExplorerCase {
             information.put("externalcase", externalcase);
             information.put("tasks", listTasks);
             information.put("comments", listComments);
+            information.put("chronos", chronos);
+            information.put("totalchronos", totalChronos);
             return information;
         }
 
         public Map<String, Object> getExternalCase(long caseId) {
              // search the process instance
             for (Map<String, Object> processVariable : externalcase) {
-                if (processVariable.get(ExplorerCase.JSON_CASEID).equals(caseId))
+                if (processVariable.get( ExplorerJson.JSON_CASEID).equals(caseId))
                     return (Map<String, Object>) processVariable;
             }
             // not found : create one
             Map<String, Object> processVariable = new HashMap<>();
-            processVariable.put(ExplorerCase.JSON_CASEID, caseId);
-            processVariable.put(ExplorerCase.JSON_VARIABLES, new ArrayList<>());
-            processVariable.put(ExplorerCase.JSON_DOCUMENTS, new ArrayList<>());
+            processVariable.put( ExplorerJson.JSON_CASEID, caseId);
+            processVariable.put( ExplorerJson.JSON_VARIABLES, new ArrayList<>());
+            processVariable.put( ExplorerJson.JSON_DOCUMENTS, new ArrayList<>());
             externalcase.add(processVariable);
             return (Map<String, Object>) processVariable;
         }
@@ -165,8 +109,10 @@ public class ExplorerCase {
 
         // build search now
         for (Boolean isActive : listSearch) {
-            BonitaAccess bonitaAccess = new BonitaAccess();
-            ExplorerCaseResult explorerExternal = bonitaAccess.searchCases(parameter, isActive, explorerParameters);
+            BonitaAccessSQL bonitaAccessSQL = new BonitaAccessSQL();
+            long beginTime = System.currentTimeMillis();
+            ExplorerCaseResult explorerExternal = bonitaAccessSQL.searchCases(parameter, isActive, explorerParameters);
+            explorerCaseResult.addChronometer(isActive? "active": "archive", System.currentTimeMillis()-beginTime);
             explorerCaseResult.add(explorerExternal);
         }
 
@@ -174,7 +120,9 @@ public class ExplorerCase {
             ExternalAccess externalAccess = new ExternalAccess();
 
             explorerCaseResult.listEvents.addAll(explorerParameters.load(false));
+            long beginTime = System.currentTimeMillis();
             ExplorerCaseResult explorerExternal = externalAccess.searchCases(explorerParameters.getExternalDataSource(), parameter);
+            explorerCaseResult.addChronometer("external", System.currentTimeMillis()-beginTime);
             explorerCaseResult.add(explorerExternal);
         }
 
@@ -226,16 +174,19 @@ public class ExplorerCase {
         explorerCaseResult.listEvents.addAll(explorerParameters.load(false));
         if (BEventFactory.isError(explorerCaseResult.listEvents))
             return explorerCaseResult;
+        
         ExternalAccess externalAccess = new ExternalAccess();
         
-        if (JSON_SCOPE_V_EXTERNAL.equals(parameter.scope)) {
+        if ( ExplorerJson.JSON_SCOPE_V_EXTERNAL.equals(parameter.scope)) {
             explorerCaseResult = externalAccess.loadCase(explorerParameters.getExternalDataSource(), parameter);
-        } else if (parameter.isUserAdmin()) {
-            BonitaAccess bonitaAccess = new BonitaAccess();
-            ExplorerCaseResult explorerExternal = bonitaAccess.loadTasksCase(parameter);
+        } else {
+            BonitaAccessSQL bonitaAccess = new BonitaAccessSQL();
+            ExplorerCaseResult explorerExternal = bonitaAccess.loadCommentsCase(parameter);
             explorerCaseResult.add(explorerExternal);
-            explorerExternal = bonitaAccess.loadCommentsCase(parameter);
-            explorerCaseResult.add(explorerExternal);
+            if (parameter.isUserAdmin()) {
+                explorerExternal = bonitaAccess.loadTasksCase(parameter);
+                explorerCaseResult.add(explorerExternal);
+            }
         }
         // load task and comment if the user is an admin
         return explorerCaseResult;

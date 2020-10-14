@@ -63,14 +63,17 @@ public class TypesCast {
     // private final static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     // 2020-10-01T00:33:00.000Z
-    public static Long getHtml5ToLongDate(String dateSt, Long defaultDate) {
+    public static Long getHtml5DateToLong(Object dateSt, Long defaultDate) {
         if (dateSt==null)
             return defaultDate;
+        // already a long
+        if (dateSt instanceof Long)
+            return (Long) dateSt;
         try
         {
             SimpleDateFormat sdfHtml5 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
             sdfHtml5.setTimeZone(TimeZone.getTimeZone("UTC"));
-            Date date = sdfHtml5.parse(dateSt);
+            Date date = sdfHtml5.parse(dateSt.toString());
             // Database is saved in GMT. So, we have to translate this time in UTC (not local time)
             return date.getTime();
         }
@@ -79,6 +82,15 @@ public class TypesCast {
             return defaultDate;
         }
     }
+    
+    public static String getHtml5DateFromLong( Long dateLong ) {
+        if (dateLong==null)
+            return null;
+        SimpleDateFormat sdfHtml5 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+        sdfHtml5.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return sdfHtml5.format( new Date( dateLong ));
+    }
+    
     
     public static Long getLongDateFromYear( int year ) {
         Calendar c = Calendar.getInstance();
