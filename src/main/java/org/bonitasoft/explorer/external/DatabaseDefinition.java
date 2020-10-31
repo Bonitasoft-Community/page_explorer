@@ -12,7 +12,7 @@ public class DatabaseDefinition {
     /**
      * ProcessInstance
      */
-    public static final String BDE_TABLE_PROCESSINSTANCE = "Bonita_Process";
+    public static final String BDE_TABLE_PROCESSINSTANCE = "Bonita_ProcessInstance";
 
     public static final String BDE_PROCESSINSTANCE_STRINGINDEX5 = "StringIndex5";
     public static final String BDE_PROCESSINSTANCE_STRINGINDEX4 = "StringIndex4";
@@ -26,6 +26,7 @@ public class DatabaseDefinition {
     public static final String BDE_PROCESSINSTANCE_STARTEDBYSUBSTITUTENAME = "StartedBySubstituteName";
     public static final String BDE_PROCESSINSTANCE_END_DATE = "EndDate";
     public static final String BDE_PROCESSINSTANCE_START_DATE = "StartDate";
+    public static final String BDE_PROCESSINSTANCE_LOCALID = "localid";
     public static final String BDE_PROCESSINSTANCE_PROCESSINSTANCEID = "processinstanceid";
     public static final String BDE_PROCESSINSTANCE_ROOTPROCESSINSTANCEID = "rootprocessinstanceid";
     public static final String BDE_PROCESSINSTANCE_PARENTPROCESSINSTANCEID = "parentprocessinstanceid";

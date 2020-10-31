@@ -22,10 +22,12 @@ import org.bonitasoft.engine.search.Order;
 import org.bonitasoft.engine.search.SearchOptionsBuilder;
 import org.bonitasoft.engine.search.SearchResult;
 import org.bonitasoft.explorer.ExplorerAPI.Parameter;
+import org.bonitasoft.explorer.ExplorerParameters.TYPEDATASOURCE;
 import org.bonitasoft.explorer.bonita.BonitaAccessSQL;
 import org.bonitasoft.explorer.external.ExternalAccess;
 import org.bonitasoft.log.event.BEvent;
 import org.bonitasoft.log.event.BEvent.Level;
+import org.bonitasoft.web.toolkit.client.data.item.attribute.ItemAttribute.TYPE;
 import org.bonitasoft.log.event.BEventFactory;
 
 import com.bonitasoft.engine.bpm.flownode.ArchivedProcessInstancesSearchDescriptor;
@@ -37,25 +39,40 @@ public class ExplorerCase {
     
     public static class ExplorerCaseResult {
 
+        public boolean isAdmin;
         public List<BEvent> listEvents = new ArrayList<>();
 
         public List<Map<String, Object>> listCases = new ArrayList<>();
         public List<Map<String, Object>> externalcase = new ArrayList<>();
         public List<Map<String, Object>> listTasks = new ArrayList<>();
         public List<Map<String, Object>> listComments = new ArrayList<>();
+        public List<String> sqlRequests = new ArrayList<>();
+        
         private Map<String, Long> chronos = new HashMap<>();
         private long totalChronos=0;
+        
+        public List<String> debugInformation = new ArrayList<>();
+        
         
         public int totalNumberOfResult = 0;
         public int firstrecord = 0;
         public int lastrecord = 0;
-
+        public int pageNumber;
+        public boolean paginationIsPossible= false;
+        
+        public ExplorerCaseResult( boolean isAdmin) {
+            this.isAdmin = isAdmin;
+            
+        }
+        
         public void add( ExplorerCaseResult explorerExternal ) {
             listCases.addAll(explorerExternal.listCases);
             listTasks.addAll( explorerExternal.listTasks);
             listComments.addAll( explorerExternal.listComments);
             listEvents.addAll(explorerExternal.listEvents);
+            debugInformation.addAll( explorerExternal.debugInformation);
             totalNumberOfResult += explorerExternal.totalNumberOfResult;
+            sqlRequests.addAll(explorerExternal.sqlRequests);
         }
         public void addChronometer(String name, long time ) {
             chronos.put(name, time);
@@ -74,6 +91,12 @@ public class ExplorerCase {
             information.put("comments", listComments);
             information.put("chronos", chronos);
             information.put("totalchronos", totalChronos);
+            information.put("pagenumber", pageNumber);
+            information.put("paginationispossible", paginationIsPossible);
+            if (isAdmin) {
+                information.put("debugInformation", debugInformation);
+                information.put("sqlRequests", sqlRequests);
+            }
             return information;
         }
 
@@ -99,31 +122,48 @@ public class ExplorerCase {
      * @return
      */
     public ExplorerCaseResult searchCases(Parameter parameter, ExplorerParameters explorerParameters) {
-        ExplorerCaseResult explorerCaseResult = new ExplorerCaseResult();
+        ExplorerCaseResult explorerCaseResult = new ExplorerCaseResult( parameter.isUserAdmin() );
 
+        
         List<Boolean> listSearch = new ArrayList<>();
         if (parameter.searchActive)
             listSearch.add(true);
         if (parameter.searchArchive)
             listSearch.add(false);
-
-        // build search now
+        // first pass : pagination is working only with one source
+        int countSource = listSearch.size();
+        if (parameter.searchExternal)
+            countSource++;
+        if (countSource>1)
+            parameter.pagenumber=0;
+        // build search now            
+        
         for (Boolean isActive : listSearch) {
-            BonitaAccessSQL bonitaAccessSQL = new BonitaAccessSQL();
+            BonitaAccessSQL bonitaAccessSQL = new BonitaAccessSQL( null );
             long beginTime = System.currentTimeMillis();
-            ExplorerCaseResult explorerExternal = bonitaAccessSQL.searchCases(parameter, isActive, explorerParameters);
-            explorerCaseResult.addChronometer(isActive? "active": "archive", System.currentTimeMillis()-beginTime);
+            ExplorerCaseResult explorerExternal = bonitaAccessSQL.searchCases(parameter, isActive, explorerParameters, null);
+            explorerCaseResult.addChronometer(isActive? "activeRequest": "archiveRequest", System.currentTimeMillis()-beginTime);
             explorerCaseResult.add(explorerExternal);
         }
 
         if (parameter.searchExternal) {
-            ExternalAccess externalAccess = new ExternalAccess();
-
             explorerCaseResult.listEvents.addAll(explorerParameters.load(false));
-            long beginTime = System.currentTimeMillis();
-            ExplorerCaseResult explorerExternal = externalAccess.searchCases(explorerParameters.getExternalDataSource(), parameter);
-            explorerCaseResult.addChronometer("external", System.currentTimeMillis()-beginTime);
-            explorerCaseResult.add(explorerExternal);
+            TYPEDATASOURCE typeDataSource = explorerParameters.getTypeExternalDatasource();
+            
+            
+            if (TYPEDATASOURCE.EXTERNAL.equals( typeDataSource)) {
+                ExternalAccess externalAccess = new ExternalAccess();
+                long beginTime = System.currentTimeMillis();
+                ExplorerCaseResult explorerExternal = externalAccess.searchCases(explorerParameters.getExternalDataSource(), explorerParameters.getPolicyOverview(), parameter);
+                explorerCaseResult.addChronometer("external", System.currentTimeMillis()-beginTime);
+                explorerCaseResult.add(explorerExternal);
+            } else {
+                BonitaAccessSQL externalAccess = new BonitaAccessSQL( explorerParameters.getExternalDataSource() );
+                long beginTime = System.currentTimeMillis();
+                ExplorerCaseResult explorerExternal = externalAccess.searchCases(parameter, false, explorerParameters, explorerParameters.getBonitaServerUrl());
+                explorerCaseResult.addChronometer( "archiveRequest", System.currentTimeMillis()-beginTime);
+                explorerCaseResult.add(explorerExternal);
+            }            
         }
 
         // so, we got potentially 3 times the size requested. So, now sort it, and get the first page requested
@@ -139,12 +179,12 @@ public class ExplorerCase {
                     compareValue = 0;
                 else if (o1 == null)
                     compareValue = Integer.valueOf(0).compareTo(Integer.valueOf(1));
-                else if (o1 instanceof Integer)
-                    compareValue = ((Integer) o1).compareTo((Integer) o2);
+                else if (o1 instanceof Integer)                
+                    compareValue = ((Integer) o1).compareTo( TypesCast.getInteger(o2, null));
                 else if (o1 instanceof Long)
-                    compareValue = ((Long) o1).compareTo((Long) o2);
+                    compareValue = ((Long) o1).compareTo( TypesCast.getLong( o2, null));
                 else if (o1 instanceof Date)
-                    compareValue = ((Date) o1).compareTo((Date) o2);
+                    compareValue = ((Date) o1).compareTo( TypesCast.getDate( o2,null));
                 else
                     compareValue = o1.toString().compareTo(o2 == null ? "" : o2.toString());
 
@@ -155,8 +195,8 @@ public class ExplorerCase {
         // get the first row
         if (explorerCaseResult.listCases.size() > parameter.caseperpages)
             explorerCaseResult.listCases = explorerCaseResult.listCases.subList(0, parameter.caseperpages);
-        explorerCaseResult.firstrecord = 1;
-        explorerCaseResult.lastrecord = explorerCaseResult.listCases.size();
+        explorerCaseResult.firstrecord = (parameter.pagenumber-1)*parameter.caseperpages+1;
+        explorerCaseResult.lastrecord = explorerCaseResult.firstrecord-1+explorerCaseResult.listCases.size();
         return explorerCaseResult;
 
     }
@@ -170,17 +210,17 @@ public class ExplorerCase {
      * @return
      */
     public ExplorerCaseResult loadCase(Parameter parameter, ExplorerParameters explorerParameters) {
-        ExplorerCaseResult explorerCaseResult = new ExplorerCaseResult();
+        ExplorerCaseResult explorerCaseResult = new ExplorerCaseResult(parameter.isUserAdmin());
         explorerCaseResult.listEvents.addAll(explorerParameters.load(false));
         if (BEventFactory.isError(explorerCaseResult.listEvents))
             return explorerCaseResult;
         
         ExternalAccess externalAccess = new ExternalAccess();
         
-        if ( ExplorerJson.JSON_SCOPE_V_EXTERNAL.equals(parameter.scope)) {
+        if ( ExplorerJson.JSON_SCOPE_V_EXTERNALCASE.equals(parameter.scope)) {
             explorerCaseResult = externalAccess.loadCase(explorerParameters.getExternalDataSource(), parameter);
         } else {
-            BonitaAccessSQL bonitaAccess = new BonitaAccessSQL();
+            BonitaAccessSQL bonitaAccess = new BonitaAccessSQL(null);
             ExplorerCaseResult explorerExternal = bonitaAccess.loadCommentsCase(parameter);
             explorerCaseResult.add(explorerExternal);
             if (parameter.isUserAdmin()) {

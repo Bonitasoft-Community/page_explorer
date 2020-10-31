@@ -1,6 +1,8 @@
 package org.bonitasoft.explorer;
 
+import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
@@ -55,7 +57,23 @@ public class TypesCast {
      */
     public static Long getLong(Object value, Long defaultValue) {
         try {
+            if (value instanceof Long)
+                return (Long) value;
+            if (value instanceof BigDecimal)
+                return ((BigDecimal) value).longValue();
+            if (value instanceof Integer)
+                return ((Integer) value).longValue();
+            
             return Long.valueOf(value.toString());
+        } catch (Exception e) {
+            return defaultValue;
+        }
+    }
+    public static Date getDate(Object value, Date defaultValue) {
+        try {
+            if (value instanceof Date)
+                return (Date) value;
+            return defaultValue;
         } catch (Exception e) {
             return defaultValue;
         }
@@ -72,7 +90,7 @@ public class TypesCast {
         try
         {
             SimpleDateFormat sdfHtml5 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-            sdfHtml5.setTimeZone(TimeZone.getTimeZone("UTC"));
+            sdfHtml5.setTimeZone(TimeZone.getTimeZone("GMT+0"));
             Date date = sdfHtml5.parse(dateSt.toString());
             // Database is saved in GMT. So, we have to translate this time in UTC (not local time)
             return date.getTime();
@@ -93,11 +111,11 @@ public class TypesCast {
     
     
     public static Long getLongDateFromYear( int year ) {
-        Calendar c = Calendar.getInstance();
+        Calendar c = Calendar.getInstance( TimeZone.getTimeZone("GMT+0"));
         c.set(Calendar.YEAR, year);
         c.set(Calendar.MONTH, Calendar.JANUARY);
         c.set(Calendar.DAY_OF_MONTH, 1);
-        c.set(Calendar.HOUR,0);
+        c.set(Calendar.HOUR_OF_DAY,0);
         c.set(Calendar.MINUTE, 0);
         c.set(Calendar.SECOND,0);
         c.set(Calendar.MILLISECOND,0);

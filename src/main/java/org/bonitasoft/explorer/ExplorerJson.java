@@ -11,6 +11,7 @@ public class ExplorerJson {
     public static final String JSON_STARTDATEEND = "startdateend";
     public static final String JSON_ENDDATEBEG = "enddatebeg";
     public static final String JSON_ENDDATEEND = "enddateend";
+    public static final String JSON_PAGENUMBER="pagenumber";
     public static final String JSON_CASEPERPAGES = "caseperpages";
     public static final String JSON_ORDERBY = "orderby";
     public static final String JSON_ORDERDIRECTION = "orderdirection";
@@ -18,9 +19,8 @@ public class ExplorerJson {
     public static final String JSON_VISIBILITY = "visibility";
     public static final String JSON_VISILITY_V_ADMIN="admin";
     public static final String JSON_VISILITY_V_USER="user";
-    public static final String JSON_YEAR = "year";
     public static final String JSON_SEARCHKEY ="searchkey";
-  
+    
     public static final String JSON_STARTEDBYNAME = "startedbyname";            
     public static final String JSON_STARTEDBYSUBSTITUTENAME = "startedbysubstitutename";            
     public static final String JSON_TYPEPROCESSINSTANCE="typeprocessinstance";
@@ -45,9 +45,9 @@ public class ExplorerJson {
     
     public static final String JSON_STARTBYNAME = "startbyname";
     public static final String JSON_SCOPE = "scope";
-    public static final String JSON_SCOPE_V_ACTIVE = "active";
-    public static final String JSON_SCOPE_V_EXTERNAL = "external";
-    public static final String JSON_SCOPE_V_ARCHIVE = "archive";
+    public static final String JSON_SCOPE_V_OPENCASE = "opencase";
+    public static final String JSON_SCOPE_V_EXTERNALCASE = "externalcase";
+    public static final String JSON_SCOPE_V_ARCHIVEDCASE = "archivedcase";
     
     public static final String JSON_PROCESSVERSION = "processversion";
     public static final String JSON_PROCESSNAME = "processname";
@@ -65,6 +65,7 @@ public class ExplorerJson {
     public static final String JSON_STRINGINDEX5 = "stringindex5";
 
     public static final String JSON_URLOVERVIEW = "urloverview";
+    public static final String JSON_URLEXTOVERVIEW = "urlextoverview";
 
     
     

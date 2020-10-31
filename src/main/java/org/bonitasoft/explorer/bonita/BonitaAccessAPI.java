@@ -46,14 +46,10 @@ public class BonitaAccessAPI {
             "Error during load Task case", "Tasks are loaded from a specific case. The load failed", "Tasks are incompletes", "Check the exception");
 
     public ExplorerCaseResult searchCases(Parameter parameter, boolean isActive, ExplorerParameters explorerParameters) {
-        ExplorerCaseResult explorerCaseResult = new ExplorerCaseResult();
+        ExplorerCaseResult explorerCaseResult = new ExplorerCaseResult( parameter.isUserAdmin() );
         SearchOptionsBuilder sob = new SearchOptionsBuilder(0, parameter.caseperpages);
 
-        if (parameter.searchYear != null && parameter.searchStartDateFrom == null)
-            parameter.searchStartDateFrom = TypesCast.getLongDateFromYear(parameter.searchYear);
-        if (parameter.searchYear != null && parameter.searchStartDateTo == null)
-            parameter.searchStartDateTo = TypesCast.getLongDateFromYear(parameter.searchYear + 1);
-
+      
         if (parameter.searchText != null) {
             sob.leftParenthesis();
             sob.filter(getAttributDescriptor( ExplorerJson.JSON_STRINGINDEX1, isActive), parameter.searchText);
@@ -119,7 +115,7 @@ public class BonitaAccessAPI {
      */
     public ExplorerCaseResult loadTasksCase(Parameter parameter) {
 
-        ExplorerCaseResult explorerCaseResult = new ExplorerCaseResult();
+        ExplorerCaseResult explorerCaseResult = new ExplorerCaseResult(parameter.isUserAdmin() );
         try {
             SearchOptionsBuilder sob = new SearchOptionsBuilder(0, 1000);
             sob.filter(FlowNodeInstanceSearchDescriptor.ROOT_PROCESS_INSTANCE_ID, parameter.searchCaseId);
@@ -186,7 +182,7 @@ public class BonitaAccessAPI {
      */
     public ExplorerCaseResult loadCommentsCase(Parameter parameter) {
 
-        ExplorerCaseResult explorerCaseResult = new ExplorerCaseResult();
+        ExplorerCaseResult explorerCaseResult = new ExplorerCaseResult(parameter.isUserAdmin() );
         try {
             // the API dones not have a ROOT_PROCESS_INSTANCE for active case
             // and... there is not API to get all Process Instance and subprocess for a case Id.
@@ -367,7 +363,7 @@ public class BonitaAccessAPI {
     private Map<String, Object> getFromProcessInstance(ProcessInstance processInstance, ProcessAPI processAPI, IdentityAPI identityAPI) {
         Map<String, Object> information = new HashMap<>();
 
-        information.put( ExplorerJson.JSON_SCOPE, ExplorerJson.JSON_SCOPE_V_ACTIVE);
+        information.put( ExplorerJson.JSON_SCOPE, ExplorerJson.JSON_SCOPE_V_OPENCASE);
 
         information.put( ExplorerJson.JSON_CASEID, processInstance.getId());
         information.put( ExplorerJson.JSON_STARTDATE,  ExplorerCase.getFromDate(processInstance.getStartDate()));
@@ -393,7 +389,7 @@ public class BonitaAccessAPI {
 
     private Map<String, Object> getFromArchivedProcessInstance(ArchivedProcessInstance archivedProcessInstance, ProcessAPI processAPI, IdentityAPI identityAPI) {
         Map<String, Object> information = new HashMap<>();
-        information.put( ExplorerJson.JSON_SCOPE,  ExplorerJson.JSON_SCOPE_V_ARCHIVE);
+        information.put( ExplorerJson.JSON_SCOPE,  ExplorerJson.JSON_SCOPE_V_ARCHIVEDCASE);
         information.put( ExplorerJson.JSON_CASEID, archivedProcessInstance.getSourceObjectId());
         information.put( ExplorerJson.JSON_STARTDATE,  ExplorerCase.getFromDate(archivedProcessInstance.getStartDate()));
         information.put( ExplorerJson.JSON_STARTDATEST, ExplorerCase.getFromDateString(archivedProcessInstance.getStartDate()));

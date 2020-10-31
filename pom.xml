@@ -1,9 +1,10 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<properties>
 		<!-- <ping.version>2.4.0</ping.version> -->
-		<bonita.version>7.8.4</bonita.version>
-	   	<maven.compiler.source>1.8</maven.compiler.source>
-   		<maven.compiler.target>1.8</maven.compiler.target>
+		<bonita.version>7.9.0</bonita.version>
+		<maven.compiler.source>1.8</maven.compiler.source>
+		<maven.compiler.target>1.8</maven.compiler.target>
+		<tomcat.directory>D:/bonita/BPM-SP-7.10.0/workspace/tomcat/server/webapps/bonita/WEB-INF/lib</tomcat.directory>
 	</properties>
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.bonitasoft.custompage</groupId>
@@ -11,7 +12,7 @@
 	<version>1.0.0</version>
 
 	<dependencies>
-		
+
 		<dependency>
 			<groupId>org.bonitasoft.log.event</groupId>
 			<artifactId>bonita-event</artifactId>
@@ -47,7 +48,19 @@
 			<version>${bonita.version}</version>
 			<scope>provided</scope>
 		</dependency>
-
+		<!-- mvn install:install-file -Dfile=console-common-7.9.0.jar -DgroupId=org.bonitasoft.console -DartifactId=console-common -Dversion=7.9.0 -Dpackaging=jar -->
+		<dependency>
+			<groupId>org.bonitasoft.console</groupId>
+			<artifactId>console-common</artifactId>
+			<version>${bonita.version}</version>
+			<scope>provided</scope>
+		</dependency>		
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>servlet-api</artifactId>
+			<version>2.5</version>
+			<scope>provided</scope>
+		</dependency>
 	</dependencies>
 
 	<!-- ******************** Community Maven repository **************** -->
@@ -67,8 +80,75 @@
 		</repository>
 	</repositories>
 	<build>
-		<!-- ******************** Copy JAR files under lib **************** -->
 		<plugins>
+			<!-- ******************** Generate the Explorer Jar File **************** -->
+
+			<plugin>
+				<artifactId>maven-jar-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>Page</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+						<phase>package</phase>
+						<configuration>
+							<classifier>Page</classifier>
+							<excludes>
+								<exclude>
+									org/bonitasoft/explorer/filter/*.*
+								</exclude>
+							</excludes>
+						</configuration>
+					</execution>
+
+					<execution>
+						<id>ExplorerFilter</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+						<phase>package</phase>
+						<configuration>
+							<classifier>Filter</classifier>
+
+							<includes>
+								<include>**/filter/*.*</include>
+							</includes>
+						</configuration>
+					</execution>
+				</executions>
+
+			</plugin>
+
+			<!-- ******************** Copy ExplorerCarFilter file under Tomcat Lib **************** -->
+			<plugin>
+				<artifactId>maven-resources-plugin</artifactId>
+				<version>3.1.0</version>
+				<executions>
+					<execution>
+						<id>copy ExplorerFilter to tomcat/webapps/bonita/WEB-INF/lib</id>
+						<phase>package</phase>
+						<goals>
+							<goal>copy-resources</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>${tomcat.directory}</outputDirectory>
+							<resources>
+								<resource>
+									<directory>target</directory>
+									<includes>
+										<include>bonita-explorer-*-Filter.jar</include>
+									</includes>
+								</resource>
+							</resources>
+
+						</configuration>
+					</execution>
+
+				</executions>
+			</plugin>
+
+			<!-- ******************** Copy JAR files under lib **************** -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-dependency-plugin</artifactId>

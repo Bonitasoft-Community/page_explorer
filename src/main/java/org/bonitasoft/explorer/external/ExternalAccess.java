@@ -17,7 +17,7 @@ import org.bonitasoft.explorer.ExplorerAPI.Parameter;
 import org.bonitasoft.explorer.ExplorerCase;
 import org.bonitasoft.explorer.ExplorerCase.ExplorerCaseResult;
 import org.bonitasoft.explorer.ExplorerJson;
-import org.bonitasoft.explorer.TypesCast;
+import org.bonitasoft.explorer.ExplorerParameters.POLICYOVERVIEW;
 import org.bonitasoft.log.event.BEvent;
 import org.bonitasoft.log.event.BEvent.Level;
 import org.bonitasoft.log.event.BEventFactory;
@@ -36,14 +36,9 @@ public class ExternalAccess {
      * @param parameter
      * @return
      */
-    public ExplorerCaseResult searchCases(String datasource, Parameter parameter) {
-        ExplorerCaseResult explorerCaseResult = new ExplorerCaseResult();
+    public ExplorerCaseResult searchCases(String datasource, POLICYOVERVIEW policyOverview, Parameter parameter) {
+        ExplorerCaseResult explorerCaseResult = new ExplorerCaseResult(parameter.isUserAdmin());
         List<Object> sqlParam = new ArrayList<>();
-
-        if (parameter.searchYear != null && parameter.searchStartDateFrom == null)
-            parameter.searchStartDateFrom = TypesCast.getLongDateFromYear(parameter.searchYear);
-        if (parameter.searchYear != null && parameter.searchStartDateTo == null)
-            parameter.searchStartDateTo = TypesCast.getLongDateFromYear(parameter.searchYear + 1);
 
         StringBuilder sqlRequest = new StringBuilder();
         sqlRequest.append("select * from " + DatabaseDefinition.BDE_TABLE_PROCESSINSTANCE + " where ");
@@ -110,7 +105,10 @@ public class ExternalAccess {
             sqlRequest.append(" ) ");
         }
 
+        explorerCaseResult.debugInformation.add( "EXTERNAL:" + sqlRequest.toString()+"; Param="+sqlParam.toString());
         /** and active case does not have a end */
+        explorerCaseResult.sqlRequests.add(sqlRequest.toString());
+        
         DatabaseConnection.ConnectionResult connectionResult = null;
         try {
             connectionResult = DatabaseConnection.getConnection(Arrays.asList(datasource));
@@ -126,7 +124,7 @@ public class ExternalAccess {
             while (rs.next()) {
                 Map<String, Object> information = new HashMap<>();
 
-                information.put(ExplorerJson.JSON_SCOPE, ExplorerJson.JSON_SCOPE_V_EXTERNAL);
+                information.put(ExplorerJson.JSON_SCOPE, ExplorerJson.JSON_SCOPE_V_EXTERNALCASE);
 
                 information.put(ExplorerJson.JSON_CASEID, rs.getObject(DatabaseDefinition.BDE_PROCESSINSTANCE_ROOTPROCESSINSTANCEID));
                 information.put(ExplorerJson.JSON_STARTDATE, rs.getLong(DatabaseDefinition.BDE_PROCESSINSTANCE_START_DATE));
@@ -144,6 +142,14 @@ public class ExternalAccess {
                 information.put(ExplorerJson.JSON_STRINGINDEX4, rs.getObject(DatabaseDefinition.BDE_PROCESSINSTANCE_STRINGINDEX4));
                 information.put(ExplorerJson.JSON_STRINGINDEX5, rs.getObject(DatabaseDefinition.BDE_PROCESSINSTANCE_STRINGINDEX5));
 
+                if (policyOverview == POLICYOVERVIEW.PROCESSOVERVIEW) {
+                    String processName = rs.getString(DatabaseDefinition.BDE_PROCESSINSTANCE_PROCESSDEFINITIONNAME);
+                    String processVersion = rs.getString(DatabaseDefinition.BDE_PROCESSINSTANCE_PROCESSDEFINITIONVERSION);
+                    Long processInstanceId = rs.getLong(DatabaseDefinition.BDE_PROCESSINSTANCE_ROOTPROCESSINSTANCEID);
+                    // information.put( ExplorerJson.JSON_URLOVERVIEW, "/bonita/portal/form/processInstance/" + rs.getObject(DatabaseDefinition.BDE_PROCESSINSTANCE_ROOTPROCESSINSTANCEID));
+                    information.put( ExplorerJson.JSON_URLOVERVIEW, "/bonita/portal//resource/processInstance/"+processName+"/"+processVersion+"/content/?id="+processInstanceId);
+                    // http://localhost:8080/bonita/portal/resource/processInstance/Task%20link%20via%20email/1.0/content/?id=8
+                }
                 explorerCaseResult.listCases.add(information);
                 explorerCaseResult.totalNumberOfResult++;
             }
@@ -170,7 +176,7 @@ public class ExternalAccess {
      * @return
      */
     public ExplorerCaseResult loadCase(String datasource, Parameter parameter) {
-        ExplorerCaseResult explorerCaseResult = new ExplorerCaseResult();
+        ExplorerCaseResult explorerCaseResult = new ExplorerCaseResult(parameter.isUserAdmin());
 
         loadVariableCase(explorerCaseResult, datasource, parameter);
         loadDocumentsCase(explorerCaseResult, datasource, parameter);

@@ -15,9 +15,14 @@ import javax.servlet.http.HttpServletResponse;
 import org.bonitasoft.engine.api.IdentityAPI;
 import org.bonitasoft.engine.api.ProcessAPI;
 import org.bonitasoft.engine.api.ProfileAPI;
+import org.bonitasoft.engine.bpm.process.ProcessDeploymentInfo;
+import org.bonitasoft.engine.bpm.process.ProcessDeploymentInfoSearchDescriptor;
+import org.bonitasoft.engine.exception.SearchException;
 import org.bonitasoft.engine.profile.Profile;
 import org.bonitasoft.engine.profile.ProfileCriterion;
 import org.bonitasoft.engine.search.Order;
+import org.bonitasoft.engine.search.SearchOptionsBuilder;
+import org.bonitasoft.engine.search.SearchResult;
 import org.bonitasoft.engine.session.APISession;
 import org.bonitasoft.explorer.external.DatabaseDefinition;
 import org.bonitasoft.explorer.external.ExternalAccess;
@@ -39,9 +44,14 @@ public class ExplorerAPI {
 
     private final static BEvent eventSaveFilterError = new BEvent(ExplorerAPI.class.getName(), 1, Level.ERROR,
             "Save Filter failed", "Error during save Filters", "Filters are not saved", "Check the exception");
+    
     private final static BEvent eventSaveFilterOk = new BEvent(ExplorerAPI.class.getName(), 2, Level.SUCCESS,
             "Filters saved", "Filters saved with success");
+
+    private final static BEvent eventSearchProcessError = new BEvent(ExplorerAPI.class.getName(), 3, Level.ERROR,
+            "Search all processes failed", "Error during search processes", "Process list will be empty", "Check the exception");
     
+
      public static class Parameter {
 
               public APISession apiSession;
@@ -54,7 +64,6 @@ public class ExplorerAPI {
         public boolean searchActive;
         public boolean searchArchive;
         public boolean searchExternal;
-        public Integer searchYear;
         public String searchText;
         public Long searchCaseId;
         public String searchProcessName;
@@ -63,6 +72,7 @@ public class ExplorerAPI {
         public Long searchEndedDateFrom;
         public Long searchEndedDateTo;
         public int caseperpages;
+        public int pagenumber;
         public String orderby;
         public Order orderdirection;
 
@@ -87,19 +97,22 @@ public class ExplorerAPI {
                 Map<String, Object> information = (Map<String, Object>) JSONValue.parse(jsonSt);
 
                 parameter.visibility = TypesCast.getStringNullIsEmpty(information.get( ExplorerJson.JSON_VISIBILITY), "user");
-                parameter.searchActive = TypesCast.getBoolean(information.get( ExplorerJson.JSON_SCOPE_V_ACTIVE), true);
-                parameter.searchArchive = TypesCast.getBoolean(information.get( ExplorerJson.JSON_SCOPE_V_ARCHIVE), true);
-                parameter.searchExternal = TypesCast.getBoolean(information.get( ExplorerJson.JSON_SCOPE_V_EXTERNAL), true);
-                parameter.searchYear = TypesCast.getInteger(information.get( ExplorerJson.JSON_YEAR), null);
+                parameter.searchActive = TypesCast.getBoolean(information.get( ExplorerJson.JSON_SCOPE_V_OPENCASE), true);
+                parameter.searchArchive = TypesCast.getBoolean(information.get( ExplorerJson.JSON_SCOPE_V_ARCHIVEDCASE), true);
+                parameter.searchExternal = TypesCast.getBoolean(information.get( ExplorerJson.JSON_SCOPE_V_EXTERNALCASE), true);
                 parameter.searchText = TypesCast.getStringNullIsEmpty(information.get( ExplorerJson.JSON_SEARCHKEY), null);
                 parameter.searchCaseId = TypesCast.getLong(information.get( ExplorerJson.JSON_CASEID), null);
-                parameter.searchProcessName = TypesCast.getStringNullIsEmpty(information.get( ExplorerJson.JSON_PROCESSNAME), null);
+                if ( information.get( ExplorerJson.JSON_PROCESSNAME) instanceof Map) {
+                    parameter.searchProcessName  =  TypesCast.getStringNullIsEmpty( ((Map)information.get( ExplorerJson.JSON_PROCESSNAME)).get("id"), null);
+                } else
+                    parameter.searchProcessName = TypesCast.getStringNullIsEmpty(information.get( ExplorerJson.JSON_PROCESSNAME), null);
                 // date format : 2020-10-01T00:33:00.000Z or a Long (saved JSON)
                 parameter.searchStartDateFrom = TypesCast.getHtml5DateToLong( information.get(ExplorerJson.JSON_STARTDATEBEG), null);
                 parameter.searchStartDateTo = TypesCast.getHtml5DateToLong( information.get(ExplorerJson.JSON_STARTDATEEND), null);
                 parameter.searchEndedDateFrom = TypesCast.getHtml5DateToLong( information.get(ExplorerJson.JSON_ENDDATEBEG), null);
                 parameter.searchEndedDateTo = TypesCast.getHtml5DateToLong( information.get(ExplorerJson.JSON_ENDDATEEND), null);
 
+                parameter.pagenumber = TypesCast.getInteger(information.get( ExplorerJson.JSON_PAGENUMBER), 1);
                 parameter.caseperpages = TypesCast.getInteger(information.get(ExplorerJson.JSON_CASEPERPAGES), 25);
                 parameter.orderby = TypesCast.getStringNullIsEmpty(information.get(ExplorerJson.JSON_ORDERBY), ExplorerJson.JSON_CASEID);
                 String orderDirectionSt = TypesCast.getStringNullIsEmpty(information.get(ExplorerJson.JSON_ORDERDIRECTION), null);
@@ -124,10 +137,9 @@ public class ExplorerAPI {
         public Map<String, Object> getMap( boolean toTheBrowser) {
             Map<String, Object> information = new HashMap<>();
             information.put( ExplorerJson.JSON_VISIBILITY, visibility);
-            information.put( ExplorerJson.JSON_SCOPE_V_ACTIVE, searchActive );
-            information.put( ExplorerJson.JSON_SCOPE_V_ARCHIVE, searchArchive );
-            information.put( ExplorerJson.JSON_SCOPE_V_EXTERNAL, searchExternal );
-            information.put( ExplorerJson.JSON_YEAR, String.valueOf(searchYear) );
+            information.put( ExplorerJson.JSON_SCOPE_V_OPENCASE, searchActive );
+            information.put( ExplorerJson.JSON_SCOPE_V_ARCHIVEDCASE, searchArchive );
+            information.put( ExplorerJson.JSON_SCOPE_V_EXTERNALCASE, searchExternal );
             information.put( ExplorerJson.JSON_SEARCHKEY, searchText);
             information.put( ExplorerJson.JSON_CASEID, searchCaseId );
             information.put( ExplorerJson.JSON_PROCESSNAME, searchProcessName );
@@ -322,6 +334,26 @@ public class ExplorerAPI {
         results.put("parameters",explorerParameters.getParameters());
         results.putAll(loadFilter( parameter, jsonParam, pageResourceProvider ));
 
+        // load process name
+        List<String> listProcessesName = new ArrayList<>();
+        listProcessesName.add(""); // no filter
+        SearchOptionsBuilder sob = new SearchOptionsBuilder(0,1000);
+        sob.sort(ProcessDeploymentInfoSearchDescriptor.NAME, Order.ASC);
+        sob.sort(ProcessDeploymentInfoSearchDescriptor.VERSION, Order.ASC);
+        
+        SearchResult<ProcessDeploymentInfo> result;
+        try {
+            result = parameter.processAPI.searchProcessDeploymentInfos( sob.done());
+            for (ProcessDeploymentInfo processInfo : result.getResult()) {
+                // only the name
+                listProcessesName.add( processInfo.getName());
+            }
+        } catch (SearchException e) {
+            logger.severe("Can't search process info " +e.getMessage());
+            listEvents.add( new BEvent(eventSearchProcessError, e, ""));
+        }
+        results.put("listprocessesname", listProcessesName);
+        
         Map<String, Object> user = new HashMap<>();
         results.put("user", user);
         user.put("isadmin", parameter.isUserAdmin());

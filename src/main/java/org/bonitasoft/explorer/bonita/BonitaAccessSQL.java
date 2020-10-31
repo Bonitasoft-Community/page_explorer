@@ -3,7 +3,9 @@ package org.bonitasoft.explorer.bonita;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -32,12 +34,14 @@ import org.bonitasoft.engine.search.SearchResult;
 import org.bonitasoft.explorer.ExplorerAPI.Parameter;
 import org.bonitasoft.explorer.ExplorerCase;
 import org.bonitasoft.explorer.ExplorerCase.ExplorerCaseResult;
+import org.bonitasoft.explorer.external.DatabaseDefinition;
 import org.bonitasoft.explorer.ExplorerJson;
 import org.bonitasoft.explorer.ExplorerParameters;
 import org.bonitasoft.explorer.TypesCast;
 import org.bonitasoft.log.event.BEvent;
 import org.bonitasoft.log.event.BEvent.Level;
 import org.bonitasoft.properties.BonitaEngineConnection;
+import org.bonitasoft.properties.DatabaseConnection;
 
 /**
  * Access by the SQL to include permission
@@ -49,25 +53,37 @@ public class BonitaAccessSQL {
     private final static BEvent eventLoadTasksCase = new BEvent(BonitaAccessSQL.class.getName(), 2, Level.ERROR,
             "Error during load Task case", "Tasks are loaded from a specific case. The load failed", "Tasks are incompletes", "Check the exception");
 
+    private String dataSource;
+
+    /**
+     * if the datasoruce is null, then this is the Local server. Else this is an external datasource
+     * Default Constructor.
+     * 
+     * @param dataSource
+     */
+    public BonitaAccessSQL(String dataSource) {
+        this.dataSource = dataSource;
+    }
+
     /**
      * Search cases
      * 
      * @param parameter
      * @param isActive
      * @param explorerParameters
+     * @param bonitaserverurl give the url to access the overview. If null, this is the local server
      * @return
      */
-    public ExplorerCaseResult searchCases(Parameter parameter, boolean isActive, ExplorerParameters explorerParameters) {
-        ExplorerCaseResult explorerCaseResult = new ExplorerCaseResult();
-
-        if (parameter.searchYear != null && parameter.searchStartDateFrom == null)
-            parameter.searchStartDateFrom = TypesCast.getLongDateFromYear(parameter.searchYear);
-        if (parameter.searchYear != null && parameter.searchStartDateTo == null)
-            parameter.searchStartDateTo = TypesCast.getLongDateFromYear(parameter.searchYear + 1);
+    public ExplorerCaseResult searchCases(Parameter parameter, boolean isActive, ExplorerParameters explorerParameters, String bonitaServerUrl) {
+        ExplorerCaseResult explorerCaseResult = new ExplorerCaseResult(parameter.isUserAdmin());
 
         StringBuilder sqlRequest = new StringBuilder();
         List<Object> sqlParam = new ArrayList<>();
-        sqlRequest.append("select * from " + (isActive ? "PROCESS_INSTANCE" : "ARCH_PROCESS_INSTANCE") + " as pi ");
+        String tableName = (isActive ? "PROCESS_INSTANCE" : "ARCH_PROCESS_INSTANCE");
+        sqlRequest.append("select pi.*, ");
+        sqlRequest.append("pd.NAME as PROCESSNAME, pd.VERSION as PROCESSVERSION");
+        sqlRequest.append(" from " + tableName + " as pi ");
+        sqlRequest.append("  join PROCESS_DEFINITION as pd on (pi.PROCESSDEFINITIONID = pd.PROCESSID)");
         sqlRequest.append(" where 1=1 ");
 
         if (parameter.searchText != null) {
@@ -98,12 +114,12 @@ public class BonitaAccessSQL {
                 // a process is required, but not process is found : do an impossible search
                 sqlRequest.append(" and 1=0");
             } else {
-                sqlRequest.append(" and (");
+                sqlRequest.append(" and pi.PROCESSDEFINITIONID in (");
 
                 for (int i = 0; i < listProcessDefinition.size(); i++) {
                     if (i > 0)
-                        sqlRequest.append(" or ");
-                    sqlRequest.append(" pi.PROCESSDEFINITIONID = ? ");
+                        sqlRequest.append(",");
+                    sqlRequest.append(" ? ");
                     sqlParam.add(listProcessDefinition.get(i));
                 }
                 sqlRequest.append(")");
@@ -157,30 +173,29 @@ public class BonitaAccessSQL {
                 caseid = "pi.ID";
             else
                 caseid = "pi.SOURCEOBJECTID";
-            /* all details 
-            sqlRequest.append(" or exists ( select fln.PARENTCONTAINERID from FLOWNODE_INSTANCE as fln where fln.PARENTCONTAINERID=" + caseid
-                    + " and fln.KIND = 'user'"
-                    + " and fln.ASSIGNEEID = ?) ");
-            sqlRequest.append(" or exists( select fln.PARENTCONTAINERID from ARCH_FLOWNODE_INSTANCE as fln where fln.PARENTCONTAINERID=" + caseid
-                    + " and fln.KIND = 'user'"
-                    + " and fln.EXECUTEDBY = ?)");
-            sqlRequest.append(" or exists( select flnfather.PARENTCONTAINERID from ARCH_FLOWNODE_INSTANCE as flnfather,ARCH_FLOWNODE_INSTANCE fln "  
-                    + " where ( flnfather.PARENTCONTAINERID=" + caseid+" and flnfather.KIND = 'multi'" 
-                    + " and flnfather.sourceobjectid = fln.PARENTCONTAINERID and fln.kind='user' and fln.EXECUTEDBY = ?)");
-            sqlParam.add(parameter.apiSession.getUserId());
-            sqlParam.add(parameter.apiSession.getUserId());
-            sqlParam.add(parameter.apiSession.getUserId());
+            /*
+             * all details
+             * sqlRequest.append(" or exists ( select fln.PARENTCONTAINERID from FLOWNODE_INSTANCE as fln where fln.PARENTCONTAINERID=" + caseid
+             * + " and fln.KIND = 'user'"
+             * + " and fln.ASSIGNEEID = ?) ");
+             * sqlRequest.append(" or exists( select fln.PARENTCONTAINERID from ARCH_FLOWNODE_INSTANCE as fln where fln.PARENTCONTAINERID=" + caseid
+             * + " and fln.KIND = 'user'"
+             * + " and fln.EXECUTEDBY = ?)");
+             * sqlRequest.append(" or exists( select flnfather.PARENTCONTAINERID from ARCH_FLOWNODE_INSTANCE as flnfather,ARCH_FLOWNODE_INSTANCE fln "
+             * + " where ( flnfather.PARENTCONTAINERID=" + caseid+" and flnfather.KIND = 'multi'"
+             * + " and flnfather.sourceobjectid = fln.PARENTCONTAINERID and fln.kind='user' and fln.EXECUTEDBY = ?)");
+             * sqlParam.add(parameter.apiSession.getUserId());
+             * sqlParam.add(parameter.apiSession.getUserId());
+             * sqlParam.add(parameter.apiSession.getUserId());
+             */
 
-                    */
-            
             /* direct */
-            sqlRequest.append(" or exists( select fln.PARENTCONTAINERID from ARCH_FLOWNODE_INSTANCE as fln "  
-                    + " where  fln.ROOTCONTAINERID=" + caseid+" and fln.KIND = 'user' and fln.EXECUTEDBY = ?)");
+            sqlRequest.append(" or exists( select fln.PARENTCONTAINERID from ARCH_FLOWNODE_INSTANCE as fln "
+                    + " where  fln.ROOTCONTAINERID=" + caseid + " and fln.KIND = 'user' and fln.EXECUTEDBY = ?)");
             sqlParam.add(parameter.apiSession.getUserId());
 
             sqlRequest.append(" ) ");
 
-            
         }
 
         if (parameter.orderby != null) {
@@ -191,22 +206,34 @@ public class BonitaAccessSQL {
             else
                 sqlRequest.append(" desc ");
         }
+        explorerCaseResult.debugInformation.add((isActive ? "ACTIVE:" : "ARCHIVE:") + sqlRequest.toString() + "; Param=" + sqlParam.toString());
         /** and active case does not have a end */
-        try (Connection con = BonitaEngineConnection.getConnection()) {
-            PreparedStatement pstmt = con.prepareStatement(sqlRequest.toString());
+        explorerCaseResult.sqlRequests.add(sqlRequest.toString());
+        ResultSet rs=null;
+        try (Connection con = getConnection();
+                PreparedStatement pstmt = con.prepareStatement(sqlRequest.toString(), ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);) {
+
             for (int i = 0; i < sqlParam.size(); i++)
                 pstmt.setObject(i + 1, sqlParam.get(i));
 
-            ResultSet rs = pstmt.executeQuery();
+            rs = pstmt.executeQuery();
+
+            // page number >0 ?
+            if (parameter.pagenumber==0)
+                parameter.pagenumber=1;
+            int advanceCount = (parameter.pagenumber -1) * parameter.caseperpages;
+            for (int i = 0; i < advanceCount; i++)
+                rs.next();
+
             while (rs.next()) {
                 if (explorerCaseResult.listCases.size() > parameter.caseperpages)
                     break;
                 Map<String, Object> information = new HashMap<>();
                 explorerCaseResult.listCases.add(information);
-                information.put(ExplorerJson.JSON_SCOPE, isActive ? ExplorerJson.JSON_SCOPE_V_ACTIVE : ExplorerJson.JSON_SCOPE_V_ARCHIVE);
+                information.put(ExplorerJson.JSON_SCOPE, isActive ? ExplorerJson.JSON_SCOPE_V_OPENCASE : ExplorerJson.JSON_SCOPE_V_ARCHIVEDCASE);
 
-                Long caseId = rs.getLong(isActive ? "ID" : "SOURCEOBJECTID");
-                information.put(ExplorerJson.JSON_CASEID, caseId);
+                Long processInstanceId = rs.getLong(isActive ? "ID" : "SOURCEOBJECTID");
+                information.put(ExplorerJson.JSON_CASEID, processInstanceId);
                 information.put(ExplorerJson.JSON_STARTDATE, rs.getLong("STARTDATE"));
                 information.put(ExplorerJson.JSON_STARTDATEST, ExplorerCase.getFromDateString(rs.getLong("STARTDATE")));
                 if (!isActive) {
@@ -226,13 +253,31 @@ public class BonitaAccessSQL {
                 information.put(ExplorerJson.JSON_STRINGINDEX3, rs.getString("STRINGINDEX3"));
                 information.put(ExplorerJson.JSON_STRINGINDEX4, rs.getString("STRINGINDEX4"));
                 information.put(ExplorerJson.JSON_STRINGINDEX5, rs.getString("STRINGINDEX5"));
-                information.put(ExplorerJson.JSON_URLOVERVIEW, "/bonita/portal/form/processInstance/" + caseId);
+
+                String processName = rs.getString("PROCESSNAME");
+                String processVersion = rs.getString("PROCESSVERSION");
+                // information.put(ExplorerJson.JSON_URLOVERVIEW, (bonitaServerUrl==null ? "" : bonitaServerUrl)+"/bonita/portal/form/processInstance/" + caseId);
+                if (bonitaServerUrl == null)
+                    information.put(ExplorerJson.JSON_URLOVERVIEW, "/bonita/portal/resource/processInstance/" + processName + "/" + processVersion + "/content/?id=" + processInstanceId);
+                else
+                    information.put(ExplorerJson.JSON_URLEXTOVERVIEW, bonitaServerUrl + "/bonita/portal/resource/processInstance/" + processName + "/" + processVersion + "/content/?id=" + processInstanceId);
 
             }
+            // how many record ? 
+            rs.last();
+            explorerCaseResult.totalNumberOfResult = rs.getRow();
+
             rs.close();
-            pstmt.close();
+            rs=null;
         } catch (Exception e) {
             explorerCaseResult.listEvents.add(new BEvent(eventSearchCase, e, "Exception " + e.getMessage()));
+        }
+        finally {
+            if (rs!=null)
+                try {
+                    rs.close();
+                } catch (SQLException e) {                 
+                }
         }
         return explorerCaseResult;
     }
@@ -243,7 +288,7 @@ public class BonitaAccessSQL {
      */
     public ExplorerCaseResult loadTasksCase(Parameter parameter) {
 
-        ExplorerCaseResult explorerCaseResult = new ExplorerCaseResult();
+        ExplorerCaseResult explorerCaseResult = new ExplorerCaseResult(parameter.isUserAdmin());
         try {
             SearchOptionsBuilder sob = new SearchOptionsBuilder(0, 1000);
             sob.filter(FlowNodeInstanceSearchDescriptor.ROOT_PROCESS_INSTANCE_ID, parameter.searchCaseId);
@@ -310,7 +355,7 @@ public class BonitaAccessSQL {
      */
     public ExplorerCaseResult loadCommentsCase(Parameter parameter) {
 
-        ExplorerCaseResult explorerCaseResult = new ExplorerCaseResult();
+        ExplorerCaseResult explorerCaseResult = new ExplorerCaseResult(parameter.isUserAdmin());
         try {
             // the API dones not have a ROOT_PROCESS_INSTANCE for active case
             // and... there is not API to get all Process Instance and subprocess for a case Id.
@@ -481,5 +526,12 @@ public class BonitaAccessSQL {
             // the ID come from the API, can't be here
             return null;
         }
+    }
+
+    private Connection getConnection() throws SQLException {
+        if (dataSource == null)
+            return BonitaEngineConnection.getConnection();
+        DatabaseConnection.ConnectionResult connection = DatabaseConnection.getConnection(Arrays.asList(dataSource));
+        return connection.con;
     }
 }

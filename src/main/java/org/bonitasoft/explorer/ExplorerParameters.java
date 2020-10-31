@@ -4,14 +4,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import org.bonitasoft.log.event.BEvent;
-import org.bonitasoft.log.event.BEventFactory;
 import org.bonitasoft.log.event.BEvent.Level;
 import org.bonitasoft.properties.BonitaProperties;
 import org.bonitasoft.web.extension.page.PageResourceProvider;
+import org.json.simple.JSONValue;
 
 public class ExplorerParameters {
 
@@ -33,10 +32,44 @@ public class ExplorerParameters {
         this.pageResourceProvider = pageResourceProvider;
     }
 
+    public enum TYPEDATASOURCE  { BONITASERVER, EXTERNAL }
+    public TYPEDATASOURCE getTypeExternalDatasource () {
+        try
+        {
+            String typeDatasource= (String) parameters.get("typedatasource");
+            return TYPEDATASOURCE.valueOf( typeDatasource);
+        } catch(Exception e ) {
+            return TYPEDATASOURCE.EXTERNAL;
+        }
+    }
     public String getExternalDataSource() {
         return (String) parameters.get("datasource");
     }
 
+    /**
+     * Policy Overview : use the Process Overview or the Display Variable?
+     * 
+     *
+     */
+    public enum POLICYOVERVIEW { DISPLAY, PROCESSOVERVIEW};
+    public POLICYOVERVIEW getPolicyOverview() {
+        try {
+            POLICYOVERVIEW policyOverview = POLICYOVERVIEW.valueOf( parameters.get("overviewpolicy").toString().toUpperCase());
+            return policyOverview;
+        }
+        catch(Exception e) {
+            return POLICYOVERVIEW.DISPLAY;
+        }
+    }
+    
+    public String getBonitaServerUrl() {
+        return (String) parameters.get("bonitaserverurl");
+    }
+    /**
+     * 
+     * @param parameters
+     */
+    
     public void setParameters(Map<String, Object> parameters) {
         this.parameters = parameters;
     }
@@ -56,9 +89,13 @@ public class ExplorerParameters {
         List<BEvent> listEvents = new ArrayList<>();
         try {
             listEvents.addAll(bonitaProperties.load());
-            for (String key : bonitaProperties.stringPropertyNames())
-                parameters.put(key, bonitaProperties.getProperty(key));
-
+            
+            String options = bonitaProperties.getProperty("options");
+            if (options!=null) {
+                @SuppressWarnings("unchecked")
+                Map<String,Object> optionMap = (Map<String, Object>) JSONValue.parse(options);                
+                parameters.putAll( optionMap);
+            }
         } catch (Exception e) {
             logger.severe("Exception " + e.toString());
             listEvents.add(new BEvent(eventLoadParametersError, e, "Error :" + e.getMessage()));
@@ -73,9 +110,9 @@ public class ExplorerParameters {
         List<BEvent> listEvents = new ArrayList<>();
         try {
             listEvents.addAll(bonitaProperties.load());
-            for (Entry<String, Object> entry : parameters.entrySet()) {
-                bonitaProperties.setProperty(entry.getKey(), entry.getValue().toString());
-            }
+            
+            String options = JSONValue.toJSONString(parameters);
+            bonitaProperties.setProperty("options", options);
             listEvents.addAll(bonitaProperties.store());
             listEvents.add(eventSaveParametersOk);
         } catch (Exception e) {

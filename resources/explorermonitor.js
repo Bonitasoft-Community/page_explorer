@@ -6,7 +6,7 @@
 (function() {
 
 
-var appCommand = angular.module("explorermonitorapp", [ "ui.bootstrap","ngSanitize" ]);
+var appCommand = angular.module('explorermonitorapp', [ 'ui.bootstrap','ngSanitize', 'ngMaterial' ]);
 
 
 /* Material : for the autocomplete
@@ -51,29 +51,56 @@ appCommand.controller("ExplorerControler",
 	}
 	
 	<!-- Search case is all parameters to search -->
-	this.searchcasesinitial =  { "active": true, 
-			"archive":true,
-			"external":true, 
+	this.searchcasesinitial =  { "opencase": true, 
+			"archivedcase":true,
+			"externalcase":true, 
+			"showstartdate" : "true",
+			"showenddate" : "true",
+			"datewithtime" : "false",
+			"filtreprocessdisplay" : 'autocomplete',
 			"year": "", 
 			"text": "", 
-			"caseid":"", 
+			"caseid": null, 
 			"processname":"", 
-			"startdatebeg":"",
-			"startdateend":"",
-			"datebeg":"",
-			"enddateend":"",			
-			"enddate":"",
+			"startdatebeg": null,
+			"startdateend": null,
+			"enddatestart": null,
+			"enddateend": null,			
 			"visibility" : "user",
-			"caseperpages": "100",
+			"caseperpages": "25",
+			"pagenumber": 1,
 			"orderby" : "caseid",
-			"orderdirection":"asc"};
+			"orderdirection":"asc",
+			"showColumns" : {
+				"origin" : true,
+				"caseid" : true,
+				"process" : true,
+				"startdate" : true,
+				"startedby" : true,
+				"enddate" : true,
+				"searchbykey1" : true,
+				"searchbykey2" : true,
+				"searchbykey3" : true,
+				"searchbykey4" : true,
+				"searchbykey5" : true 
+			}			
+	
+	};
 	this.searchcases =  angular.copy(this.searchcasesinitial);
 	this.cases={};
 	
 	
 	this.searchCases = function()
 	{
-		
+		this.searchcases.pagenumber=1;
+		this.loadCases();			
+	}
+	this.refresh = function() {
+		console.log("Pagination="+this.searchcases.pagenumber)
+		this.loadCases();
+	}
+	
+	this.loadCases = function() {
 		var self=this;
 		self.inprogress=true;
 		self.originprogress="searcase";
@@ -81,7 +108,7 @@ appCommand.controller("ExplorerControler",
 		var d = new Date();
 		var json = encodeURIComponent(angular.toJson(this.searchcases, true));
 		self.listevents="";
-		// console.log("operationJob Call HTTP");
+		console.log("loadCases json="+json);
 
 
 		$http.get( "?page=custompage_explorer&action=searchCases&paramjson=" + json+"&t="+Date.now())
@@ -106,8 +133,8 @@ appCommand.controller("ExplorerControler",
 					
 					self.inprogress=false;
 					});
-				
 	}
+	
 
 	// -----------------------------------------------------------------------------------------
 	//  										GUI Case
@@ -130,25 +157,48 @@ appCommand.controller("ExplorerControler",
 		this.searchcases =  angular.copy(this.searchcasesinitial);
 	}
 
+	this.showExternalOrigin = function() {
+		if (this.parameter.typedatasource === 'NOEXTERNALARCHIVE') {
+			this.searchcases.externalcase=false;		
+			return false;
+		}
+		return true;
+	}
+	
+	this.showPagination= function() {
+		var source=0;
+		if (this.searchcases.opencase)
+			source ++;
+		if (this.searchcases.archivedcase) 
+			source ++;
+		if (this.searchcases.externalcase) 
+			source ++;
+		if (source>1)
+			return false;
+		return true;
+	}
 	this.showCasePanel=function( show ) {
 		this.casegui.showcasepanel = show;
 		this.casegui.showsearchpanel= ! show;
 		console.log("Show CasePanelWidh="+this.casegui.showsearchpanel);
 	}
-	this.showCaseOverview = function (caseselected ) {
+	this.showCaseOverview = function ( caseselected ) {
 		var self=this;
 		self.showCasePanel( true );
 		self.casegui.showcaseurl = caseselected.urloverview;
+		self.casegui.showcaseexturl = caseselected.urlextoverview;
 		self.casegui.caseselected = caseselected;
 		self.casegui.navbaractiv = "Overview";
 		// the case maybe a External archive, then ask the content
 		
 
 		self.inprogress=true;
+		self.casegui.caseexturlcontent="";
 		self.originprogress="showCaseOverview";
+		
 		var param = { "caseid" : caseselected.caseid, "scope" : caseselected.scope };			
 		var json = encodeURIComponent(angular.toJson(param, true));
-
+		
 		$http.get( "?page=custompage_explorer&action=loadcase&paramjson=" + json+"&t="+Date.now())
 		.success( function ( jsonResult, statusHttp, headers, config ) {
 			// connection is lost ?
@@ -161,15 +211,28 @@ appCommand.controller("ExplorerControler",
 			self.casegui.externalcase 	= jsonResult.externalcase;
 			self.casegui.tasks  		= jsonResult.tasks;
 			self.casegui.comments  		= jsonResult.comments;
-		} )
+		  })
 		.error( function ( jsonResult, statusHttp, headers, config ) {
 			console.log("ERROR LOAD CASE"+jsonResult);
 			self.inprogress=false;
-		});
+		  });
 		
-
-	
 		
+		/** This does not work due to the CORS
+		console.log("load case ext with Access-Control-Allow-Origin="+self.casegui.showcaseexturl);
+		if (self.casegui.showcaseexturl !=null) {
+			// Access-Control-Allow-Origin
+			var httpConfig = {
+		            cache: false, 
+		            headers : { "Access-Control-Allow-Origin": "*"}
+		        };
+			$http.get( self.casegui.showcaseexturl, httpConfig )
+			.success( function ( jsonResult, statusHttp, headers, config ) {
+				console.log("Result case url content = "+jsonResult);
+				self.casegui.caseexturlcontent= jsonResult;
+			});
+		}
+		*/
 	}
 	this.refreshDate= new Date();
 
@@ -232,14 +295,7 @@ appCommand.controller("ExplorerControler",
 						window.location.reload();
 					}
 					self.searchcases 	= jsonResult.searchcases;
-					if (self.searchcases.startdatebeg)
-						self.searchcases.startdatebeg = new Date( self.searchcases.startdatebeg );
-					if (self.searchcases.startdateend)
-						self.searchcases.startdateend = new Date( self.searchcases.startdateend );
-					if (self.searchcases.enddatebeg)
-						self.searchcases.enddatebeg = new Date( self.searchcases.enddatebeg );
-					if (self.searchcases.enddateend)
-						self.searchcases.enddateend = new Date( self.searchcases.enddateend );
+					self.transformSearchCase();
 					self.listevents		= jsonResult.listevents;
 					self.inprogress		= false;
 				})
@@ -292,30 +348,58 @@ appCommand.controller("ExplorerControler",
 						console.log("Redirected to the login page !");
 						window.location.reload();
 					}
-					self.parameter 		= jsonResult.parameters;
-					self.searchcases	= jsonResult.searchcases;
-					if (self.searchcases.startdatebeg)
-						self.searchcases.startdatebeg = new Date( self.searchcases.startdatebeg );
-					if (self.searchcases.startdateend)
-						self.searchcases.startdateend = new Date( self.searchcases.startdateend );
-					if (self.searchcases.enddatebeg)
-						self.searchcases.enddatebeg = new Date( self.searchcases.enddatebeg );
-					if (self.searchcases.enddateend)
-						self.searchcases.enddateend = new Date( self.searchcases.enddateend );
-				
-					self.listevents		= jsonResult.listevents;
-					self.inprogress		= false;
-					self.user 			= jsonResult.user;
+					self.parameter 			= jsonResult.parameters;
+					self.searchcases		= jsonResult.searchcases;
+					self.transformSearchCase();
+					self.listevents			= jsonResult.listevents;
+					self.inprogress			= false;
+					self.user 				= jsonResult.user;
+					self.listprocessesname 	= jsonResult.listprocessesname;
+					
+					// initialise the default show columns
+					if (! self.parameter.showColumns) 						
+						self.parameter.showColumns= angular.copy(self.searchcasesinitial.showColumns); 
+					if (! self.parameter.showColumns.caseid) 
+						self.parameter.showColumns.caseid=true;
+
 				})
 				.error( function() {
 					});
+	}
+	
+	this.transformSearchCase = function() {
+		if (this.searchcases.startdatebeg)
+			this.searchcases.startdatebeg = new Date( this.searchcases.startdatebeg );
+		if (this.searchcases.startdateend)
+			this.searchcases.startdateend = new Date( this.searchcases.startdateend );
+		if (this.searchcases.enddatebeg)
+			this.searchcases.enddatebeg = new Date( this.searchcases.enddatebeg );
+		if (this.searchcases.enddateend)
+			this.searchcases.enddateend = new Date( this.searchcases.enddateend );
+		if (! this.searchcases.caseperpages)
+			this.searchcases.caseperpages = this.searchcasesinitial.caseperpages;
+		if (! this.searchcases.caseperpages || this.searchcases.caseperpages =="" || this.searchcases.caseperpages =="0" )
+			this.searchcases.caseperpages = this.searchcasesinitial.caseperpages;
+		if (! this.searchcases.opencase && ! this.searchcases.archivedcase && !  this.searchcases.externalcase) {
+			this.searchcases.opencase		= this.searchcasesinitial.opencase;
+			this.searchcases.archivedcase	= this.searchcasesinitial.archivedcase;
+			this.searchcases.externalcase	= this.searchcasesinitial.externalcase;
+		}
+		
+		if (! this.searchcases.visibility)
+			this.searchcases.visibility = this.searchcasesinitial.visibility;
+		if (! this.searchcases.orderby)
+			this.searchcases.orderby = this.searchcasesinitial.orderby;
+		if (! this.searchcases.orderdirection)
+			this.searchcases.orderdirection = this.searchcasesinitial.orderdirection;	
+		
 	}
 	// -----------------------------------------------------------------------------------------
 	//  										Autocomplete
 	// -----------------------------------------------------------------------------------------
 	this.autocomplete={};
 	
-	this.queryUser = function(searchText) {
+	this.query = function(queryName, searchText) {
 		var self=this;
 		console.log("QueryUser HTTP CALL["+searchText+"]");
 		
@@ -331,7 +415,7 @@ appCommand.controller("ExplorerControler",
 		// 7.6 : the server force a cache on all URL, so to bypass the cache, then create a different URL
 		var d = new Date();
 		
-		return $http.get( "?page=custompage_searchCases&action=queryusers&paramjson="+json+"&t="+d.getTime() )
+		return $http.get( "?page=custompage_searchCases&action="+queryName+"&paramjson="+json+"&t="+d.getTime() )
 		.then( function ( jsonResult, statusHttp, headers, config ) {
 			// connection is lost ?
 			if (statusHttp==401 || typeof jsonResult === "string") {
@@ -340,13 +424,13 @@ appCommand.controller("ExplorerControler",
 			}
 			console.log("QueryUser HTTP SUCCESS.1 - result= "+angular.toJson(jsonResult, false));
 			self.autocomplete.inprogress=false;
-		 	self.autocomplete.listUsers =  jsonResult.data.listUsers;
-			console.log("QueryUser HTTP SUCCESS length="+self.autocomplete.listUsers.length);
+		 	self.autocomplete.listprocesses =  jsonResult.data.listProcesses;
+			console.log("QueryUser HTTP SUCCESS length="+self.autocomplete.listprocesses.length);
 			self.inprogress=false;
 	
-			return self.autocomplete.listUsers;
+			return self.autocomplete.listprocesses;
 		},  function ( jsonResult ) {
-		console.log("QueryUser HTTP THEN");
+			console.log("QueryUser HTTP THEN");
 		});
 
 	  };
@@ -390,6 +474,9 @@ appCommand.controller("ExplorerControler",
 	}
 	this.init();
 	
+	this.getUrlContent = function ( urlContent ) {		
+		return $sce.trustAsHtml(  urlContent );
+	}
 	
 	<!-- Manage the event -->
 	this.getListEvents = function ( listevents ) {

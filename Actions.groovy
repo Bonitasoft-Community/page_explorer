@@ -74,7 +74,7 @@ import org.bonitasoft.engine.command.CommandDescriptor;
 import org.bonitasoft.engine.command.CommandCriterion;
 import org.bonitasoft.engine.bpm.flownode.ActivityInstance;
 import org.bonitasoft.engine.bpm.process.ProcessDeploymentInfo;
-
+import org.bonitasoft.engine.bpm.process.ProcessDeploymentInfoSearchDescriptor
 import org.bonitasoft.engine.identity.UserSearchDescriptor;
 import org.bonitasoft.engine.search.Order;
 import org.bonitasoft.engine.bpm.process.ProcessDeploymentInfo;
@@ -173,7 +173,46 @@ public class Actions {
             } else if ("loadparamandfilter".equals(action)) {
                 logger.info("Load loadparameters");
                 actionAnswer.responseMap = explorerAPI.loadParametersAndFilter( parameter, jsonParam, pageResourceProvider);
-            } else if ("queryusers".equals(action))
+            } else if ("queryprocess".equals(action)) {
+                List listProcesses = new ArrayList();
+                String processFilter = (jsonParam == null ? "" : jsonParam.get("userfilter"));
+                
+                SearchOptionsBuilder searchOptionsBuilder = new SearchOptionsBuilder(0,20);
+                // searchOptionsBuilder.greaterOrEquals(ProcessDeploymentInfoSearchDescriptor.NAME, processFilter);
+                // searchOptionsBuilder.lessOrEquals(ProcessDeploymentInfoSearchDescriptor.NAME, processFilter+"z");
+                searchOptionsBuilder.searchTerm(processFilter);
+
+               
+
+                searchOptionsBuilder.sort( ProcessDeploymentInfoSearchDescriptor.NAME,  Order.ASC);
+                searchOptionsBuilder.sort( ProcessDeploymentInfoSearchDescriptor.VERSION,  Order.ASC);
+                Set<String> setProcessesWithoutVersion=new HashSet<String>();
+
+                SearchResult<ProcessDeploymentInfo> searchResult = processAPI.searchProcessDeploymentInfos(searchOptionsBuilder.done() );
+                // logger.info("TruckMilk:Search process deployment containing ["+processFilter+"] - found "+searchResult.getCount());
+
+                for (final ProcessDeploymentInfo processDeploymentInfo : searchResult.getResult())
+                {
+                    final Map<String, Object> oneRecord = new HashMap<String, Object>();
+                    oneRecord.put("display", processDeploymentInfo.getName());
+                    oneRecord.put("id", processDeploymentInfo.getName());
+                    listProcesses.add( oneRecord );
+                    setProcessesWithoutVersion.add(processDeploymentInfo.getName());
+                }
+                
+                // sort the result again to have the "process without version" at the correct place
+
+                Collections.sort(listProcesses, new Comparator< Map<String, Object>>()
+                        {
+                            public int compare( Map<String, Object> s1,
+                                    Map<String, Object> s2)
+                            {
+                                return ((String)s1.get("display")).compareTo( ((String)s2.get("display")));
+                            }
+                        });
+                actionAnswer.responseMap.put("listProcesses", listProcesses);
+                actionAnswer.responseMap.put("nbProcess", searchResult.getCount());
+            }  else if ("queryusers".equals(action))
             {
                
 				List listUsers = new ArrayList();
