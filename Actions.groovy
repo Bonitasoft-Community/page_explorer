@@ -190,9 +190,10 @@ public class Actions {
 
                 SearchResult<ProcessDeploymentInfo> searchResult = processAPI.searchProcessDeploymentInfos(searchOptionsBuilder.done() );
                 // logger.info("TruckMilk:Search process deployment containing ["+processFilter+"] - found "+searchResult.getCount());
-
                 for (final ProcessDeploymentInfo processDeploymentInfo : searchResult.getResult())
                 {
+                    if (setProcessesWithoutVersion.contains( processDeploymentInfo.getName()))
+                        continue;
                     final Map<String, Object> oneRecord = new HashMap<String, Object>();
                     oneRecord.put("display", processDeploymentInfo.getName());
                     oneRecord.put("id", processDeploymentInfo.getName());

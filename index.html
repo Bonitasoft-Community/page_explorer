@@ -52,7 +52,7 @@
 		<table><tr><td><h1>Explorer</h1></td><td rowspan="2"><img src="img/icebreaker.jpg" width="150" heigth="150" /></td></tr>
 			<tr><td>
 				<center>
-					V1.0.0 (Oct 30, 2020)
+					V1.0.1 (Nov 3, 2020)
 				</center>
 			</td></tr>
 			<tr><td>
@@ -356,7 +356,7 @@
 					<div ng-if="ctrl.casegui.navbaractiv == 'Overview'">
 						<!--  showcaseurl={{ctrl.casegui.showcaseurl}} showcaseexturl={{ctrl.casegui.ctrl.casegui.showcaseexturl}} -->
 						<div class="CaseViewer Viewer-wrapper ng-isolate-scope" height="100%" ng-if="ctrl.casegui.showcaseurl">
-							<a ng-href="ctrl.casegui.showcaseurl" target="top">Open in a new tab</a>
+							<!--  <a ng-href="ctrl.casegui.showcaseurl" target="top">Open in a new tab</a> -->
 							<iframe src="{{ctrl.casegui.showcaseurl}}" width="100%" height="100%" style="border: none;" title="Case overview" id="icaseoverview" onLoad="onLoadIFrame()"
 									sandbox="allow-same-origin allow-scripts allow-popups allow-forms"></iframe>
 																
@@ -616,8 +616,8 @@
 					<label for="example-datetime-local-input" class="col-sm-2 col-form-label">Banner</label>
 					 <div class="col-sm-10">
 					 	<select ng-model="ctrl.parameter.showbanner" >
-						 	<option value="open">Show</option>
-						 	<option value="open">Hide</option>
+						 	<option value="Show">Show</option>
+						 	<option value="Hide">Hide</option>
 					 	</select>
 					 </div>			 
 				</div>		
@@ -642,7 +642,7 @@ function onLoadIFrame() {
     for( var i = 0; i < iframes.length; i++) {
     	var height=iframes[ i ].contentWindow.document.body.scrollHeight;
     	height+= 20;
-    	console.log("Found a Iframe! size="+iframes[ i ].contentWindow.document.body.scrollHeight+" set heigh="+height);
+    	console.log("OnLoadIframeScript: Found a Iframe, size="+iframes[ i ].contentWindow.document.body.scrollHeight+" set heigh="+height);
         iframes[ i ].style.height = height + 'px';
 
 

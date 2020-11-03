@@ -198,14 +198,15 @@ public class BonitaAccessSQL {
 
         }
 
-        if (parameter.orderby != null) {
-            sqlRequest.append(" order by ");
-            sqlRequest.append(getAttributDescriptor(parameter.orderby, isActive));
-            if (Order.ASC.equals(parameter.orderdirection))
-                sqlRequest.append(" asc ");
-            else
-                sqlRequest.append(" desc ");
+        String direction = Order.ASC.equals(parameter.orderdirection)? "asc":"desc";
+        String attributName = getAttributDescriptor(parameter.orderby, isActive);
+        sqlRequest.append(" order by ");
+        if (parameter.orderby != null && attributName!=null) {
+            sqlRequest.append(attributName+" "+ direction+", ");
         }
+        // add the case ID systematiclay
+        sqlRequest.append(getAttributDescriptor(ExplorerJson.JSON_CASEID, isActive)+" "+direction);
+        
         explorerCaseResult.debugInformation.add((isActive ? "ACTIVE:" : "ARCHIVE:") + sqlRequest.toString() + "; Param=" + sqlParam.toString());
         /** and active case does not have a end */
         explorerCaseResult.sqlRequests.add(sqlRequest.toString());
@@ -244,10 +245,7 @@ public class BonitaAccessSQL {
                 information.put(ExplorerJson.JSON_PROCESSNAME, processDefinition == null ? null : processDefinition.getName());
                 information.put(ExplorerJson.JSON_PROCESSVERSION, processDefinition == null ? null : processDefinition.getVersion());
                 information.put(ExplorerJson.JSON_PROCESSDEFINITIONID, processDefinition == null ? null : processDefinition.getId());
-
-                User user = getUser(rs.getLong("STARTEDBY"), parameter.identityAPI);
-                information.put(ExplorerJson.JSON_STARTBYNAME, user == null ? null : user.getUserName());
-
+                information.put(ExplorerJson.JSON_STARTBYNAME, getUserFirstNameLastName(rs.getLong("STARTEDBY"), parameter.identityAPI));
                 information.put(ExplorerJson.JSON_STRINGINDEX1, rs.getString("STRINGINDEX1"));
                 information.put(ExplorerJson.JSON_STRINGINDEX2, rs.getString("STRINGINDEX2"));
                 information.put(ExplorerJson.JSON_STRINGINDEX3, rs.getString("STRINGINDEX3"));
@@ -304,9 +302,9 @@ public class BonitaAccessSQL {
                 taskContent.put(ExplorerJson.JSON_ID, activityInstance.getId());
                 taskContent.put(ExplorerJson.JSON_KIND, activityInstance.getType().toString());
                 taskContent.put(ExplorerJson.JSON_EXECUTEDBY, activityInstance.getExecutedBy());
-                taskContent.put(ExplorerJson.JSON_EXECUTEDBYNAME, getUser(activityInstance.getExecutedBy(), parameter.identityAPI));
+                taskContent.put(ExplorerJson.JSON_EXECUTEDBYNAME, getUserFirstNameLastName(activityInstance.getExecutedBy(), parameter.identityAPI));
                 taskContent.put(ExplorerJson.JSON_EXECUTEDBYSUBSTITUTE, activityInstance.getExecutedBySubstitute());
-                taskContent.put(ExplorerJson.JSON_EXECUTEDBYSUBSTITUTENAME, getUser(activityInstance.getExecutedBySubstitute(), parameter.identityAPI));
+                taskContent.put(ExplorerJson.JSON_EXECUTEDBYSUBSTITUTENAME, getUserFirstNameLastName(activityInstance.getExecutedBySubstitute(), parameter.identityAPI));
                 taskContent.put(ExplorerJson.JSON_ENDDATE, ExplorerCase.getFromDate(activityInstance.getLastUpdateDate()));
                 taskContent.put(ExplorerJson.JSON_ENDDATEST, ExplorerCase.getFromDateString(activityInstance.getLastUpdateDate()));
             }
@@ -325,9 +323,9 @@ public class BonitaAccessSQL {
                 taskContent.put(ExplorerJson.JSON_ID, archivedActivityInstance.getId());
                 taskContent.put(ExplorerJson.JSON_KIND, archivedActivityInstance.getType().toString());
                 taskContent.put(ExplorerJson.JSON_EXECUTEDBY, archivedActivityInstance.getExecutedBy());
-                taskContent.put(ExplorerJson.JSON_EXECUTEDBYNAME, getUser(archivedActivityInstance.getExecutedBy(), parameter.identityAPI));
+                taskContent.put(ExplorerJson.JSON_EXECUTEDBYNAME, getUserFirstNameLastName(archivedActivityInstance.getExecutedBy(), parameter.identityAPI));
                 taskContent.put(ExplorerJson.JSON_EXECUTEDBYSUBSTITUTE, archivedActivityInstance.getExecutedBySubstitute());
-                taskContent.put(ExplorerJson.JSON_EXECUTEDBYSUBSTITUTENAME, getUser(archivedActivityInstance.getExecutedBySubstitute(), parameter.identityAPI));
+                taskContent.put(ExplorerJson.JSON_EXECUTEDBYSUBSTITUTENAME, getUserFirstNameLastName(archivedActivityInstance.getExecutedBySubstitute(), parameter.identityAPI));
                 taskContent.put(ExplorerJson.JSON_ENDDATE, ExplorerCase.getFromDate(archivedActivityInstance.getLastUpdateDate()));
                 taskContent.put(ExplorerJson.JSON_ENDDATEST, ExplorerCase.getFromDateString(archivedActivityInstance.getLastUpdateDate()));
             }
@@ -387,9 +385,8 @@ public class BonitaAccessSQL {
                     commentContent.put(ExplorerJson.JSON_PROCESSINSTANCE, comment.comment.getProcessInstanceId());
                     commentContent.put(ExplorerJson.JSON_CONTENT, comment.comment.getContent());
                     commentContent.put(ExplorerJson.JSON_ID, comment.comment.getId());
-                    commentContent.put(ExplorerJson.JSON_USERBY, comment.comment.getUserId());
-                    User user = getUser(comment.comment.getUserId(), parameter.identityAPI);
-                    commentContent.put(ExplorerJson.JSON_USERBYNAME, user == null ? null : user.getUserName());
+                    commentContent.put(ExplorerJson.JSON_USERBY, comment.comment.getUserId());                    
+                    commentContent.put(ExplorerJson.JSON_USERBYNAME, getUserFirstNameLastName(comment.comment.getUserId(), parameter.identityAPI));
                     commentContent.put(ExplorerJson.JSON_ENDDATE, comment.comment.getPostDate());
                     commentContent.put(ExplorerJson.JSON_ENDDATEST, ExplorerCase.getFromDateString(comment.comment.getPostDate()));
                 }
@@ -398,8 +395,7 @@ public class BonitaAccessSQL {
                     commentContent.put(ExplorerJson.JSON_CONTENT, comment.archivedComment.getContent());
                     commentContent.put(ExplorerJson.JSON_ID, comment.archivedComment.getId());
                     commentContent.put(ExplorerJson.JSON_USERBY, comment.archivedComment.getUserId());
-                    User user = getUser(comment.archivedComment.getUserId(), parameter.identityAPI);
-                    commentContent.put(ExplorerJson.JSON_USERBYNAME, user == null ? null : user.getUserName());
+                    commentContent.put(ExplorerJson.JSON_USERBYNAME, getUserFirstNameLastName(comment.archivedComment.getUserId(), parameter.identityAPI));
                     commentContent.put(ExplorerJson.JSON_ENDDATE, ExplorerCase.getFromDate(comment.archivedComment.getPostDate()));
                     commentContent.put(ExplorerJson.JSON_ENDDATEST, ExplorerCase.getFromDateString(comment.archivedComment.getPostDate()));
 
@@ -433,7 +429,7 @@ public class BonitaAccessSQL {
         if (ExplorerJson.JSON_STRINGINDEX1.equals(name)) {
             return "pi.STRINGINDEX1";
         }
-        if (ExplorerJson.JSON_STRINGINDEX2.equals(isActive)) {
+        if (ExplorerJson.JSON_STRINGINDEX2.equals(name)) {
             return "pi.STRINGINDEX2";
         }
         if (ExplorerJson.JSON_STRINGINDEX3.equals(name)) {
@@ -461,6 +457,8 @@ public class BonitaAccessSQL {
         if (ExplorerJson.JSON_ENDDATE.equals(name)) {
             return "pi.ENDDATE";
         }
+        if ("processname".equals(name))
+            return name;
         return null;
 
     }
@@ -493,15 +491,21 @@ public class BonitaAccessSQL {
      */
     private Map<Long, User> cacheUsers = new HashMap<>();
 
+    private String getUserFirstNameLastName(Long userId, IdentityAPI identityAPI) {
+        User user = getUser(userId, identityAPI);
+        if (user==null)
+            return null;
+        return user.getFirstName()+" "+user.getLastName();
+    }
     private User getUser(Long userId, IdentityAPI identityAPI) {
         if (userId == null || userId <= 0)
             return null;
         try {
             if (cacheUsers.containsKey(userId))
                 return cacheUsers.get(userId);
-            User processDefinition = identityAPI.getUser(userId);
-            cacheUsers.put(userId, processDefinition);
-            return processDefinition;
+            User user = identityAPI.getUser(userId);
+            cacheUsers.put(userId, user);
+            return user;
         } catch (Exception e) {
             // the ID come from the API, can't be here
             return null;

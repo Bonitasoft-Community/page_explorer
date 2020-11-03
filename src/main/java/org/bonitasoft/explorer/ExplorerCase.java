@@ -9,29 +9,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.bonitasoft.engine.api.IdentityAPI;
-import org.bonitasoft.engine.api.ProcessAPI;
-import org.bonitasoft.engine.bpm.process.ArchivedProcessInstance;
-import org.bonitasoft.engine.bpm.process.ProcessDefinition;
-import org.bonitasoft.engine.bpm.process.ProcessDeploymentInfo;
-import org.bonitasoft.engine.bpm.process.ProcessDeploymentInfoSearchDescriptor;
-import org.bonitasoft.engine.bpm.process.ProcessInstance;
-import org.bonitasoft.engine.exception.SearchException;
-import org.bonitasoft.engine.identity.User;
 import org.bonitasoft.engine.search.Order;
-import org.bonitasoft.engine.search.SearchOptionsBuilder;
-import org.bonitasoft.engine.search.SearchResult;
 import org.bonitasoft.explorer.ExplorerAPI.Parameter;
 import org.bonitasoft.explorer.ExplorerParameters.TYPEDATASOURCE;
 import org.bonitasoft.explorer.bonita.BonitaAccessSQL;
 import org.bonitasoft.explorer.external.ExternalAccess;
 import org.bonitasoft.log.event.BEvent;
-import org.bonitasoft.log.event.BEvent.Level;
-import org.bonitasoft.web.toolkit.client.data.item.attribute.ItemAttribute.TYPE;
 import org.bonitasoft.log.event.BEventFactory;
-
-import com.bonitasoft.engine.bpm.flownode.ArchivedProcessInstancesSearchDescriptor;
-import com.bonitasoft.engine.bpm.process.impl.ProcessInstanceSearchDescriptor;
 
 public class ExplorerCase {
 
@@ -104,7 +88,7 @@ public class ExplorerCase {
              // search the process instance
             for (Map<String, Object> processVariable : externalcase) {
                 if (processVariable.get( ExplorerJson.JSON_CASEID).equals(caseId))
-                    return (Map<String, Object>) processVariable;
+                    return processVariable;
             }
             // not found : create one
             Map<String, Object> processVariable = new HashMap<>();
@@ -112,7 +96,7 @@ public class ExplorerCase {
             processVariable.put( ExplorerJson.JSON_VARIABLES, new ArrayList<>());
             processVariable.put( ExplorerJson.JSON_DOCUMENTS, new ArrayList<>());
             externalcase.add(processVariable);
-            return (Map<String, Object>) processVariable;
+            return processVariable;
         }
 
     } // end Case Result
@@ -142,7 +126,7 @@ public class ExplorerCase {
             BonitaAccessSQL bonitaAccessSQL = new BonitaAccessSQL( null );
             long beginTime = System.currentTimeMillis();
             ExplorerCaseResult explorerExternal = bonitaAccessSQL.searchCases(parameter, isActive, explorerParameters, null);
-            explorerCaseResult.addChronometer(isActive? "activeRequest": "archiveRequest", System.currentTimeMillis()-beginTime);
+            explorerCaseResult.addChronometer(Boolean.TRUE.equals(isActive)? "activeRequest": "archiveRequest", System.currentTimeMillis()-beginTime);
             explorerCaseResult.add(explorerExternal);
         }
 
@@ -188,6 +172,12 @@ public class ExplorerCase {
                 else
                     compareValue = o1.toString().compareTo(o2 == null ? "" : o2.toString());
 
+                // identical? CaseId is then the second comparaison
+                if (compareValue==0) {
+                    Long case1 = TypesCast.getLong(s1.get( ExplorerJson.JSON_CASEID), 0L);
+                    Long case2 = TypesCast.getLong(s2.get( ExplorerJson.JSON_CASEID), 0L);
+                    compareValue = case1.compareTo(case2);
+                }
                 return Order.ASC.equals(parameter.orderdirection) ? compareValue : -compareValue;
             }
         });

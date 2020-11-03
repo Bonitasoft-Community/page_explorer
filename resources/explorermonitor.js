@@ -180,9 +180,10 @@ appCommand.controller("ExplorerControler",
 	this.showCasePanel=function( show ) {
 		this.casegui.showcasepanel = show;
 		this.casegui.showsearchpanel= ! show;
-		console.log("Show CasePanelWidh="+this.casegui.showsearchpanel);
+		
 	}
 	this.showCaseOverview = function ( caseselected ) {
+		console.log("ShowCaseOverview");
 		var self=this;
 		self.showCasePanel( true );
 		self.casegui.showcaseurl = caseselected.urloverview;
@@ -207,7 +208,7 @@ appCommand.controller("ExplorerControler",
 				window.location.reload();
 			}
 			self.inprogress=false;
-			console.log("load case"+jsonResult);
+			console.log("ShowCaseOverview.load case"+jsonResult);
 			self.casegui.externalcase 	= jsonResult.externalcase;
 			self.casegui.tasks  		= jsonResult.tasks;
 			self.casegui.comments  		= jsonResult.comments;
