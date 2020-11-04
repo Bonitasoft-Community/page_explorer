@@ -202,10 +202,11 @@ public class BonitaAccessSQL {
         String attributName = getAttributDescriptor(parameter.orderby, isActive);
         sqlRequest.append(" order by ");
         if (parameter.orderby != null && attributName!=null) {
-            sqlRequest.append(attributName+" "+ direction+", ");
+            sqlRequest.append(attributName+" "+ direction);
         }
-        // add the case ID systematiclay
-        sqlRequest.append(getAttributDescriptor(ExplorerJson.JSON_CASEID, isActive)+" "+direction);
+        // add the case ID systematicaly
+        if (! parameter.orderby.equalsIgnoreCase(ExplorerJson.JSON_CASEID))
+            sqlRequest.append(", "+getAttributDescriptor(ExplorerJson.JSON_CASEID, isActive)+" "+direction);
         
         explorerCaseResult.debugInformation.add((isActive ? "ACTIVE:" : "ARCHIVE:") + sqlRequest.toString() + "; Param=" + sqlParam.toString());
         /** and active case does not have a end */
