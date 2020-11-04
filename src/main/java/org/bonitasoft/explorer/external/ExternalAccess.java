@@ -124,7 +124,7 @@ public class ExternalAccess {
             while (rs.next()) {
                 Map<String, Object> information = new HashMap<>();
 
-                information.put(ExplorerJson.JSON_SCOPE, ExplorerJson.JSON_SCOPE_V_EXTERNALCASE);
+                information.put(ExplorerJson.JSON_ORIGIN, ExplorerJson.JSON_ORIGIN_V_EXTERNALCASE);
 
                 information.put(ExplorerJson.JSON_CASEID, rs.getObject(DatabaseDefinition.BDE_PROCESSINSTANCE_ROOTPROCESSINSTANCEID));
                 information.put(ExplorerJson.JSON_STARTDATE, rs.getLong(DatabaseDefinition.BDE_PROCESSINSTANCE_START_DATE));

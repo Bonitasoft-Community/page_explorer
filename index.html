@@ -52,7 +52,7 @@
 		<table><tr><td><h1>Explorer</h1></td><td rowspan="2"><img src="img/icebreaker.jpg" width="150" heigth="150" /></td></tr>
 			<tr><td>
 				<center>
-					V1.0.1 (Nov 3, 2020)
+					V1.0.2 (Nov 4, 2020)
 				</center>
 			</td></tr>
 			<tr><td>
@@ -296,7 +296,7 @@
 					</tr>
 					<tbody ng-repeat="case in ctrl.cases.list">
 						<tr>
-							<td ng-show="ctrl.parameter.showColumns.origin"	>{{case.scope}}</td>
+							<td ng-show="ctrl.parameter.showColumns.origin"	>{{case.origin}}</td>
 							<td												><a ng-click="ctrl.showCaseOverview( case )">{{case.caseid}}</a></td>
 							<td ng-show="ctrl.parameter.showColumns.process"><div title="{{case.processname}} ({{case.processversion}})">{{case.processname}}</div></td>
 							<td ng-show="ctrl.parameter.showColumns.startdate">{{case.startdatest}}</td>

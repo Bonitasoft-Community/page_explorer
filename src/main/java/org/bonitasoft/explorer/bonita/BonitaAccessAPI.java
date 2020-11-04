@@ -363,7 +363,7 @@ public class BonitaAccessAPI {
     private Map<String, Object> getFromProcessInstance(ProcessInstance processInstance, ProcessAPI processAPI, IdentityAPI identityAPI) {
         Map<String, Object> information = new HashMap<>();
 
-        information.put( ExplorerJson.JSON_SCOPE, ExplorerJson.JSON_SCOPE_V_OPENCASE);
+        information.put( ExplorerJson.JSON_SCOPE, ExplorerJson.JSON_ORIGIN_V_OPENCASE);
 
         information.put( ExplorerJson.JSON_CASEID, processInstance.getId());
         information.put( ExplorerJson.JSON_STARTDATE,  ExplorerCase.getFromDate(processInstance.getStartDate()));
@@ -389,7 +389,7 @@ public class BonitaAccessAPI {
 
     private Map<String, Object> getFromArchivedProcessInstance(ArchivedProcessInstance archivedProcessInstance, ProcessAPI processAPI, IdentityAPI identityAPI) {
         Map<String, Object> information = new HashMap<>();
-        information.put( ExplorerJson.JSON_SCOPE,  ExplorerJson.JSON_SCOPE_V_ARCHIVEDCASE);
+        information.put( ExplorerJson.JSON_SCOPE,  ExplorerJson.JSON_ORIGIN_V_ARCHIVEDCASE);
         information.put( ExplorerJson.JSON_CASEID, archivedProcessInstance.getSourceObjectId());
         information.put( ExplorerJson.JSON_STARTDATE,  ExplorerCase.getFromDate(archivedProcessInstance.getStartDate()));
         information.put( ExplorerJson.JSON_STARTDATEST, ExplorerCase.getFromDateString(archivedProcessInstance.getStartDate()));

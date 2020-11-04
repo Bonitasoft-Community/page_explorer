@@ -125,7 +125,7 @@ public class ExplorerCase {
         for (Boolean isActive : listSearch) {
             BonitaAccessSQL bonitaAccessSQL = new BonitaAccessSQL( null );
             long beginTime = System.currentTimeMillis();
-            ExplorerCaseResult explorerExternal = bonitaAccessSQL.searchCases(parameter, isActive, explorerParameters, null);
+            ExplorerCaseResult explorerExternal = bonitaAccessSQL.searchCases(parameter, isActive, false, explorerParameters, null);
             explorerCaseResult.addChronometer(Boolean.TRUE.equals(isActive)? "activeRequest": "archiveRequest", System.currentTimeMillis()-beginTime);
             explorerCaseResult.add(explorerExternal);
         }
@@ -144,7 +144,7 @@ public class ExplorerCase {
             } else {
                 BonitaAccessSQL externalAccess = new BonitaAccessSQL( explorerParameters.getExternalDataSource() );
                 long beginTime = System.currentTimeMillis();
-                ExplorerCaseResult explorerExternal = externalAccess.searchCases(parameter, false, explorerParameters, explorerParameters.getBonitaServerUrl());
+                ExplorerCaseResult explorerExternal = externalAccess.searchCases(parameter, false, true, explorerParameters, explorerParameters.getBonitaServerUrl());
                 explorerCaseResult.addChronometer( "archiveRequest", System.currentTimeMillis()-beginTime);
                 explorerCaseResult.add(explorerExternal);
             }            
@@ -163,12 +163,14 @@ public class ExplorerCase {
                     compareValue = 0;
                 else if (o1 == null)
                     compareValue = Integer.valueOf(0).compareTo(Integer.valueOf(1));
+                else if (o2==null)
+                    compareValue= Integer.valueOf(1).compareTo(Integer.valueOf(0));
                 else if (o1 instanceof Integer)                
-                    compareValue = ((Integer) o1).compareTo( TypesCast.getInteger(o2, null));
+                    compareValue = ((Integer) o1).compareTo( TypesCast.getInteger(o2, 0));
                 else if (o1 instanceof Long)
-                    compareValue = ((Long) o1).compareTo( TypesCast.getLong( o2, null));
+                    compareValue = ((Long) o1).compareTo( TypesCast.getLong( o2, 0L));
                 else if (o1 instanceof Date)
-                    compareValue = ((Date) o1).compareTo( TypesCast.getDate( o2,null));
+                    compareValue = ((Date) o1).compareTo( TypesCast.getDate( o2, null));
                 else
                     compareValue = o1.toString().compareTo(o2 == null ? "" : o2.toString());
 
@@ -207,7 +209,7 @@ public class ExplorerCase {
         
         ExternalAccess externalAccess = new ExternalAccess();
         
-        if ( ExplorerJson.JSON_SCOPE_V_EXTERNALCASE.equals(parameter.scope)) {
+        if ( ExplorerJson.JSON_ORIGIN_V_EXTERNALCASE.equals(parameter.origin)) {
             explorerCaseResult = externalAccess.loadCase(explorerParameters.getExternalDataSource(), parameter);
         } else {
             BonitaAccessSQL bonitaAccess = new BonitaAccessSQL(null);

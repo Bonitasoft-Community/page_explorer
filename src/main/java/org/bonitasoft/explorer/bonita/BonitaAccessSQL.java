@@ -34,10 +34,8 @@ import org.bonitasoft.engine.search.SearchResult;
 import org.bonitasoft.explorer.ExplorerAPI.Parameter;
 import org.bonitasoft.explorer.ExplorerCase;
 import org.bonitasoft.explorer.ExplorerCase.ExplorerCaseResult;
-import org.bonitasoft.explorer.external.DatabaseDefinition;
 import org.bonitasoft.explorer.ExplorerJson;
 import org.bonitasoft.explorer.ExplorerParameters;
-import org.bonitasoft.explorer.TypesCast;
 import org.bonitasoft.log.event.BEvent;
 import org.bonitasoft.log.event.BEvent.Level;
 import org.bonitasoft.properties.BonitaEngineConnection;
@@ -74,7 +72,7 @@ public class BonitaAccessSQL {
      * @param bonitaserverurl give the url to access the overview. If null, this is the local server
      * @return
      */
-    public ExplorerCaseResult searchCases(Parameter parameter, boolean isActive, ExplorerParameters explorerParameters, String bonitaServerUrl) {
+    public ExplorerCaseResult searchCases(Parameter parameter, boolean isActive, boolean isExternalServer, ExplorerParameters explorerParameters, String bonitaServerUrl) {
         ExplorerCaseResult explorerCaseResult = new ExplorerCaseResult(parameter.isUserAdmin());
 
         StringBuilder sqlRequest = new StringBuilder();
@@ -199,14 +197,24 @@ public class BonitaAccessSQL {
         }
 
         String direction = Order.ASC.equals(parameter.orderdirection)? "asc":"desc";
+        List<String> listOrderBy = new ArrayList<>();
+        
         String attributName = getAttributDescriptor(parameter.orderby, isActive);
-        sqlRequest.append(" order by ");
         if (parameter.orderby != null && attributName!=null) {
-            sqlRequest.append(attributName+" "+ direction);
+            listOrderBy.add(attributName);
         }
-        // add the case ID systematicaly
+        // add the case ID (if not already in the list)
         if (! parameter.orderby.equalsIgnoreCase(ExplorerJson.JSON_CASEID))
-            sqlRequest.append(", "+getAttributDescriptor(ExplorerJson.JSON_CASEID, isActive)+" "+direction);
+            listOrderBy.add(getAttributDescriptor(ExplorerJson.JSON_CASEID, isActive));
+
+        if (! listOrderBy.isEmpty()) {
+            sqlRequest.append(" order by ");
+            for (int i=0;i<listOrderBy.size();i++) {
+                if (i>0)
+                    sqlRequest.append(", ");
+                sqlRequest.append( listOrderBy.get( i ) +" "+direction);
+            }
+        }
         
         explorerCaseResult.debugInformation.add((isActive ? "ACTIVE:" : "ARCHIVE:") + sqlRequest.toString() + "; Param=" + sqlParam.toString());
         /** and active case does not have a end */
@@ -232,7 +240,12 @@ public class BonitaAccessSQL {
                     break;
                 Map<String, Object> information = new HashMap<>();
                 explorerCaseResult.listCases.add(information);
-                information.put(ExplorerJson.JSON_SCOPE, isActive ? ExplorerJson.JSON_SCOPE_V_OPENCASE : ExplorerJson.JSON_SCOPE_V_ARCHIVEDCASE);
+                if (isActive)
+                    information.put(ExplorerJson.JSON_ORIGIN, ExplorerJson.JSON_ORIGIN_V_OPENCASE );
+                else if (isExternalServer)
+                    information.put(ExplorerJson.JSON_ORIGIN, ExplorerJson.JSON_ORIGIN_V_EXTERNALCASE);
+                else
+                    information.put(ExplorerJson.JSON_ORIGIN,  ExplorerJson.JSON_ORIGIN_V_ARCHIVEDCASE);
 
                 Long processInstanceId = rs.getLong(isActive ? "ID" : "SOURCEOBJECTID");
                 information.put(ExplorerJson.JSON_CASEID, processInstanceId);
@@ -242,10 +255,10 @@ public class BonitaAccessSQL {
                     information.put(ExplorerJson.JSON_ENDDATE, rs.getLong("ENDDATE"));
                     information.put(ExplorerJson.JSON_ENDDATEST, ExplorerCase.getFromDateString(rs.getLong("ENDDATE")));
                 }
-                ProcessDefinition processDefinition = getProcessDefinition(rs.getLong("PROCESSDEFINITIONID"), parameter.processAPI);
-                information.put(ExplorerJson.JSON_PROCESSNAME, processDefinition == null ? null : processDefinition.getName());
-                information.put(ExplorerJson.JSON_PROCESSVERSION, processDefinition == null ? null : processDefinition.getVersion());
-                information.put(ExplorerJson.JSON_PROCESSDEFINITIONID, processDefinition == null ? null : processDefinition.getId());
+                // ProcessDefinition processDefinition = getProcessDefinition(rs.getLong("PROCESSDEFINITIONID"), parameter.processAPI);
+                information.put(ExplorerJson.JSON_PROCESSNAME, rs.getString("PROCESSNAME"));
+                information.put(ExplorerJson.JSON_PROCESSVERSION, rs.getString("PROCESSVERSION"));
+                information.put(ExplorerJson.JSON_PROCESSDEFINITIONID, rs.getLong("PROCESSDEFINITIONID"));
                 information.put(ExplorerJson.JSON_STARTBYNAME, getUserFirstNameLastName(rs.getLong("STARTEDBY"), parameter.identityAPI));
                 information.put(ExplorerJson.JSON_STRINGINDEX1, rs.getString("STRINGINDEX1"));
                 information.put(ExplorerJson.JSON_STRINGINDEX2, rs.getString("STRINGINDEX2"));

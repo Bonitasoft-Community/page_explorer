@@ -78,7 +78,7 @@ public class ExplorerAPI {
 
         public Long docId;
 
-        public String scope;
+        public String origin;
         private Boolean saveIsUserAdmin = null;
 
         @SuppressWarnings("unchecked")
@@ -97,9 +97,9 @@ public class ExplorerAPI {
                 Map<String, Object> information = (Map<String, Object>) JSONValue.parse(jsonSt);
 
                 parameter.visibility = TypesCast.getStringNullIsEmpty(information.get( ExplorerJson.JSON_VISIBILITY), "user");
-                parameter.searchActive = TypesCast.getBoolean(information.get( ExplorerJson.JSON_SCOPE_V_OPENCASE), true);
-                parameter.searchArchive = TypesCast.getBoolean(information.get( ExplorerJson.JSON_SCOPE_V_ARCHIVEDCASE), true);
-                parameter.searchExternal = TypesCast.getBoolean(information.get( ExplorerJson.JSON_SCOPE_V_EXTERNALCASE), true);
+                parameter.searchActive = TypesCast.getBoolean(information.get( ExplorerJson.JSON_ORIGIN_V_OPENCASE), true);
+                parameter.searchArchive = TypesCast.getBoolean(information.get( ExplorerJson.JSON_ORIGIN_V_ARCHIVEDCASE), true);
+                parameter.searchExternal = TypesCast.getBoolean(information.get( ExplorerJson.JSON_ORIGIN_V_EXTERNALCASE), true);
                 parameter.searchText = TypesCast.getStringNullIsEmpty(information.get( ExplorerJson.JSON_SEARCHKEY), null);
                 parameter.searchCaseId = TypesCast.getLong(information.get( ExplorerJson.JSON_CASEID), null);
                 if ( information.get( ExplorerJson.JSON_PROCESSNAME) instanceof Map) {
@@ -123,7 +123,7 @@ public class ExplorerAPI {
                 else
                     parameter.orderdirection = Order.ASC;
                 parameter.docId = TypesCast.getLong(information.get("docid"), null);
-                parameter.scope = TypesCast.getStringNullIsEmpty(information.get(ExplorerJson.JSON_SCOPE), null);
+                parameter.origin = TypesCast.getStringNullIsEmpty(information.get(ExplorerJson.JSON_ORIGIN), null);
 
             } catch (Exception e) {
                 StringWriter sw = new StringWriter();
@@ -137,9 +137,9 @@ public class ExplorerAPI {
         public Map<String, Object> getMap( boolean toTheBrowser) {
             Map<String, Object> information = new HashMap<>();
             information.put( ExplorerJson.JSON_VISIBILITY, visibility);
-            information.put( ExplorerJson.JSON_SCOPE_V_OPENCASE, searchActive );
-            information.put( ExplorerJson.JSON_SCOPE_V_ARCHIVEDCASE, searchArchive );
-            information.put( ExplorerJson.JSON_SCOPE_V_EXTERNALCASE, searchExternal );
+            information.put( ExplorerJson.JSON_ORIGIN_V_OPENCASE, searchActive );
+            information.put( ExplorerJson.JSON_ORIGIN_V_ARCHIVEDCASE, searchArchive );
+            information.put( ExplorerJson.JSON_ORIGIN_V_EXTERNALCASE, searchExternal );
             information.put( ExplorerJson.JSON_SEARCHKEY, searchText);
             information.put( ExplorerJson.JSON_CASEID, searchCaseId );
             information.put( ExplorerJson.JSON_PROCESSNAME, searchProcessName );
@@ -152,7 +152,7 @@ public class ExplorerAPI {
             information.put( ExplorerJson.JSON_CASEPERPAGES, String.valueOf(caseperpages));
             information.put( ExplorerJson.JSON_ORDERBY, orderby );
             information.put( ExplorerJson.JSON_ORDERDIRECTION, orderdirection == Order.ASC? "asc" : "desc");
-            information.put( ExplorerJson.JSON_SCOPE, scope);
+            information.put( ExplorerJson.JSON_ORIGIN, origin);
             return information;
         }
         

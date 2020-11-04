@@ -44,10 +44,10 @@ public class ExplorerJson {
     public static final String JSON_TYPEVARIABLE_V_DOC = "doc";
     
     public static final String JSON_STARTBYNAME = "startbyname";
-    public static final String JSON_SCOPE = "scope";
-    public static final String JSON_SCOPE_V_OPENCASE = "opencase";
-    public static final String JSON_SCOPE_V_EXTERNALCASE = "externalcase";
-    public static final String JSON_SCOPE_V_ARCHIVEDCASE = "archivedcase";
+    public static final String JSON_ORIGIN = "origin";
+    public static final String JSON_ORIGIN_V_OPENCASE = "opencase";
+    public static final String JSON_ORIGIN_V_EXTERNALCASE = "externalcase";
+    public static final String JSON_ORIGIN_V_ARCHIVEDCASE = "archivedcase";
     
     public static final String JSON_PROCESSVERSION = "processversion";
     public static final String JSON_PROCESSNAME = "processname";
