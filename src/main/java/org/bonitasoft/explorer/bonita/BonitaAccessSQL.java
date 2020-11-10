@@ -269,6 +269,7 @@ public class BonitaAccessSQL {
                 String processName = rs.getString("PROCESSNAME");
                 String processVersion = rs.getString("PROCESSVERSION");
                 // information.put(ExplorerJson.JSON_URLOVERVIEW, (bonitaServerUrl==null ? "" : bonitaServerUrl)+"/bonita/portal/form/processInstance/" + caseId);
+                
                 if (bonitaServerUrl == null)
                     information.put(ExplorerJson.JSON_URLOVERVIEW, "/bonita/portal/resource/processInstance/" + processName + "/" + processVersion + "/content/?id=" + processInstanceId);
                 else

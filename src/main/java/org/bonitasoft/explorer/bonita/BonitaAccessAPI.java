@@ -409,7 +409,9 @@ public class BonitaAccessAPI {
         information.put( ExplorerJson.JSON_STRINGINDEX4, archivedProcessInstance.getStringIndexValue(4));
         information.put( ExplorerJson.JSON_STRINGINDEX5, archivedProcessInstance.getStringIndexValue(5));
 
-        information.put( ExplorerJson.JSON_URLOVERVIEW, "/bonita/portal/form/processInstance/" + archivedProcessInstance.getSourceObjectId());
+        // Doc says  /bonita/portal/form/processInstance/
+        // portal use portal/form/processInstance
+        information.put( ExplorerJson.JSON_URLOVERVIEW, "portal/form/processInstance/" + archivedProcessInstance.getSourceObjectId());
 
         return information;
     }
